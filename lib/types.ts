@@ -1,0 +1,164 @@
+export type Subject = "물리" | "화학" | "생명" | "지구";
+
+export type Usage = "verification" | "explanation";
+
+export type Phase =
+  | "waiting"
+  | "design"
+  | "design_review"
+  | "build"
+  | "output_review"
+  | "present"
+  | "wrapup";
+
+export const PHASES: Phase[] = [
+  "waiting",
+  "design",
+  "design_review",
+  "build",
+  "output_review",
+  "present",
+  "wrapup",
+];
+
+export const PHASE_LABEL: Record<Phase, string> = {
+  waiting: "대기",
+  design: "설계",
+  design_review: "설계 검토",
+  build: "제작",
+  output_review: "산출물 검토",
+  present: "발표",
+  wrapup: "정리",
+};
+
+/** 단계 번호(1~7)는 PHASES 배열 순서 + 1 */
+export function phaseToStage(phase: Phase): number {
+  const i = PHASES.indexOf(phase);
+  return i < 0 ? 1 : i + 1;
+}
+
+export interface DesignDoc {
+  usage: Usage;
+  /** 탐구질문 → 화면이 답할 질문 */
+  question: string;
+  /** 가설 → 예상 그래프 패턴 */
+  hypothesis: string;
+  /** 조작변인 → 슬라이더 */
+  independentVar: string;
+  /** 종속변인 → 그래프 y축 */
+  dependentVar: string;
+  /** 통제변인 → 화면 고정값 */
+  controlledVars: string;
+  /** 검증 기준 → 실측/문헌 대조 (수강생 직접 작성) */
+  verification: string;
+  /** 한계 → 무시한 요인 */
+  limitations: string;
+  /** usage=explanation 전용 */
+  concept: string;
+  /** usage=explanation 전용 */
+  accuracyBasis: string;
+}
+
+export const EMPTY_DESIGN_DOC: DesignDoc = {
+  usage: "verification",
+  question: "",
+  hypothesis: "",
+  independentVar: "",
+  dependentVar: "",
+  controlledVars: "",
+  verification: "",
+  limitations: "",
+  concept: "",
+  accuracyBasis: "",
+};
+
+export interface AiReview {
+  text: string;
+  createdAt: number;
+}
+
+export interface SelfReviewDesign {
+  changedField: string;
+  note: string;
+}
+
+export interface PeerReviewDesign {
+  fromId: string;
+  fromName: string;
+  comment: string;
+}
+
+export type ReviewerRole = "변인" | "검증" | "한계";
+
+export interface PeerQuestion {
+  fromId: string;
+  fromName: string;
+  role: ReviewerRole;
+  question: string;
+}
+
+export interface Participant {
+  id: string;
+  name: string;
+  subject: Subject;
+  order: number;
+  stage: number;
+  gateApproved: boolean;
+  seedId: string | null;
+  designDoc: DesignDoc;
+  aiReviewDesign: AiReview | null;
+  selfReviewDesign: SelfReviewDesign | null;
+  peerReviewDesign: PeerReviewDesign | null;
+  canvaLink: string;
+  outputSummary: string;
+  aiReviewOutput: AiReview | null;
+  selfReviewOutput: { limitationAdded: string } | null;
+  peerQuestions: PeerQuestion[];
+  instructorComment: string;
+  takeaway: string;
+}
+
+export interface SessionDoc {
+  currentSlide: number;
+  phase: Phase;
+  presenterId: string | null;
+  slides: string[];
+  createdAt: number;
+}
+
+/** 설계 검토 3종(AI·자기·동료)이 모두 끝났는지 — 게이트 승인 버튼 활성화 조건 */
+export function designReviewComplete(p: Participant): boolean {
+  return Boolean(
+    p.aiReviewDesign?.text &&
+      p.selfReviewDesign?.changedField &&
+      p.peerReviewDesign?.comment
+  );
+}
+
+/** 4명을 2명씩 짝지음: order 0↔1, 2↔3 */
+export function findPartner(
+  me: Participant,
+  all: Participant[]
+): Participant | null {
+  const sorted = [...all].sort((a, b) => a.order - b.order);
+  const i = sorted.findIndex((p) => p.id === me.id);
+  if (i < 0) return null;
+  const partnerIndex = i % 2 === 0 ? i + 1 : i - 1;
+  return sorted[partnerIndex] ?? null;
+}
+
+/** 발표자 기준으로 나머지 참가자에게 검토관 역할을 순서대로 배정 */
+export function reviewerRoleFor(
+  viewerId: string,
+  presenterId: string,
+  all: Participant[]
+): ReviewerRole | null {
+  if (viewerId === presenterId) return null;
+  const roles: ReviewerRole[] = ["변인", "검증", "한계"];
+  const others = [...all]
+    .sort((a, b) => a.order - b.order)
+    .filter((p) => p.id !== presenterId);
+  const i = others.findIndex((p) => p.id === viewerId);
+  if (i < 0) return null;
+  return roles[i % roles.length];
+}

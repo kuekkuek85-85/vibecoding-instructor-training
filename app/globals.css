@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0e1420;
+  --surface: #17202f;
+  --surface-2: #1e293b;
+  --border: #2c3a4f;
+  --foreground: #e8edf5;
+  --muted: #9aabc2;
+  --accent: #5eb0ff;
+  --accent-strong: #2f80ed;
+  --ok: #43c59e;
+  --warn: #f5b544;
+  --danger: #f2705f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-sans-kr);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans-kr), "Malgun Gothic", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* 강의 화면 가독성: 폼 요소는 크고 대비 높게 */
+input[type="text"],
+input[type="url"],
+textarea,
+select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--foreground);
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+::placeholder {
+  color: #6d7f96;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
