@@ -18,6 +18,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "진자 길이 – 주기",
     doc: {
       usage: "verification",
+      topicTitle: "진자 길이 – 주기",
       question: "진자의 길이가 길어지면 주기는 어떻게 변할까?",
       hypothesis: "길이가 길어질수록 주기가 길어지되, 제곱근에 비례해 완만하게 증가한다.",
       independentVar: "진자의 길이 (0.1 m ~ 2.0 m)",
@@ -35,6 +36,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "경사면 각도 – 가속도",
     doc: {
       usage: "verification",
+      topicTitle: "경사면 각도 – 가속도",
       question: "경사면의 각도가 커지면 물체의 가속도는 어떻게 변할까?",
       hypothesis: "각도가 커질수록 가속도가 커지며, sin 값에 비례해 증가한다.",
       independentVar: "경사면의 각도 (0° ~ 60°)",
@@ -52,6 +54,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "용수철 상수 – 진동수",
     doc: {
       usage: "verification",
+      topicTitle: "용수철 상수 – 진동수",
       question: "용수철이 뻣뻣할수록 진동은 얼마나 빨라질까?",
       hypothesis: "용수철 상수가 클수록 진동수가 커지며, 제곱근에 비례해 증가한다.",
       independentVar: "용수철 상수 (5 N/m ~ 100 N/m)",
@@ -69,6 +72,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "온도 – 용해 속도",
     doc: {
       usage: "verification",
+      topicTitle: "온도 – 용해 속도",
       question: "물의 온도가 높아지면 설탕이 녹는 속도는 얼마나 빨라질까?",
       hypothesis: "온도가 높을수록 용해 속도가 빨라지며, 완전히 녹는 시간이 급격히 짧아진다.",
       independentVar: "물의 온도 (10 ℃ ~ 80 ℃)",
@@ -86,6 +90,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "농도 – 반응 속도",
     doc: {
       usage: "verification",
+      topicTitle: "농도 – 반응 속도",
       question: "묽은 염산의 농도가 진해지면 반응은 얼마나 빨라질까?",
       hypothesis: "농도가 높을수록 단위 시간당 기체 발생량이 많아져 반응 속도가 비례해 커진다.",
       independentVar: "염산의 농도 (0.1 M ~ 2.0 M)",
@@ -103,6 +108,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "촉매 유무 – 분해 속도",
     doc: {
       usage: "verification",
+      topicTitle: "촉매 유무 – 분해 속도",
       question: "촉매를 넣으면 과산화수소의 분해는 얼마나 빨라질까?",
       hypothesis: "촉매의 양이 늘수록 분해 속도가 빨라지지만, 일정 수준 이상에서는 더 빨라지지 않는다.",
       independentVar: "촉매(이산화망가니즈)의 양 (0 g ~ 1.0 g)",
@@ -120,6 +126,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "먹이량 – 개체 수 (개체군 성장)",
     doc: {
       usage: "verification",
+      topicTitle: "먹이량 – 개체 수 (개체군 성장)",
       question: "먹이의 양이 늘어나면 개체군은 어디까지 늘어날까?",
       hypothesis: "먹이가 많을수록 최대 개체 수가 커지지만, 결국 S자 곡선을 그리며 일정 값에 수렴한다.",
       independentVar: "하루에 공급되는 먹이의 양 (10 g ~ 200 g)",
@@ -137,6 +144,7 @@ export const DESIGN_SEEDS: DesignSeed[] = [
     title: "단열재 두께 – 내부 기온 변화",
     doc: {
       usage: "verification",
+      topicTitle: "단열재 두께 – 내부 기온 변화",
       question: "단열재를 두껍게 하면 내부 온도는 얼마나 천천히 떨어질까?",
       hypothesis: "단열재가 두꺼울수록 온도 하강이 느려지며, 일정 두께를 넘으면 개선 폭이 작아진다.",
       independentVar: "단열재의 두께 (0 cm ~ 20 cm)",

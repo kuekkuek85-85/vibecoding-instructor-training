@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ParticipantModal, type ModalSection } from "./ParticipantModal";
 import { createSession, patchParticipant, patchSession } from "@/lib/db";
 import { defaultNames, SUBJECT_OPTIONS } from "@/lib/seed-data";
 import {
@@ -20,6 +21,8 @@ import { Badge, Button, Card, ColorBlock, Eyebrow, Field, Notice, SectionTitle }
 export function AdminDashboard() {
   const { sessionId, session, participants, loading, error } = useSession();
   const [showSeed, setShowSeed] = useState(false);
+  /** 팝업으로 열어 둔 참가자와 위치 */
+  const [open, setOpen] = useState<{ id: string; section: ModalSection } | null>(null);
 
   if (loading) return <Wrap>불러오는 중…</Wrap>;
   if (error)
@@ -57,6 +60,7 @@ export function AdminDashboard() {
             sessionId={sessionId}
             p={p}
             isPresenter={session.presenterId === p.id}
+            onOpen={(section) => setOpen({ id: p.id, section })}
           />
         ))}
       </div>
@@ -76,6 +80,21 @@ export function AdminDashboard() {
             ))}
           </ul>
         </ColorBlock>
+      ) : null}
+
+      {open ? (
+        (() => {
+          const target = participants.find((x) => x.id === open.id);
+          if (!target) return null;
+          return (
+            <ParticipantModal
+              key={`${open.id}-${open.section}`}
+              p={target}
+              section={open.section}
+              onClose={() => setOpen(null)}
+            />
+          );
+        })()
       ) : null}
     </Wrap>
   );
@@ -321,10 +340,12 @@ function ParticipantCard({
   sessionId,
   p,
   isPresenter,
+  onOpen,
 }: {
   sessionId: string;
   p: Participant;
   isPresenter: boolean;
+  onOpen: (section: ModalSection) => void;
 }) {
   const [comment, setComment] = useState(p.instructorComment);
   const ready = designReviewComplete(p);
@@ -337,81 +358,58 @@ function ParticipantCard({
         <Badge>{String(p.stage).padStart(2, "0")} 단계</Badge>
         {p.gateApproved ? <Badge tone="ok">승인됨</Badge> : <Badge tone="warn">🔒 미승인</Badge>}
         {isPresenter ? <Badge tone="ok">발표 중</Badge> : null}
+        <button
+          onClick={() => onOpen("design")}
+          className="t-caption ml-auto rounded-pill border border-hairline px-3 py-1.5 transition hover:border-ink"
+        >
+          전체 보기
+        </button>
       </div>
 
       <ul className="mb-5 divide-y divide-hairline-soft">
-        <li>
-          <span className="t-caption opacity-50">AI 설계 검토</span>{" "}
-          {p.aiReviewDesign ? "✅" : "—"}
-        </li>
-        <li>
-          <span className="t-caption opacity-50">자기 검토</span>{" "}
-          {p.selfReviewDesign
-            ? `✅ (${p.selfReviewDesign.changedField})`
-            : "—"}
-        </li>
-        <li>
-          <span className="t-caption opacity-50">동료 검토</span>{" "}
-          {p.peerReviewDesign ? `✅ ${p.peerReviewDesign.fromName}` : "—"}
-        </li>
-        <li>
-          <span className="t-caption opacity-50">캔바 링크</span>{" "}
-          {p.canvaLink ? (
-            <a
-              className="underline underline-offset-4"
-              href={p.canvaLink}
-              target="_blank"
-              rel="noreferrer"
+        {(
+          [
+            ["design", "연구설계서", Boolean(p.designDoc?.question)],
+            ["aiDesign", "AI 설계 검토", Boolean(p.aiReviewDesign)],
+            ["self", "자기 검토", Boolean(p.selfReviewDesign)],
+            ["peer", "동료 검토", Boolean(p.peerReviewDesign)],
+            ["output", "산출물 링크", Boolean(p.canvaLink)],
+            ["aiOutput", "AI 산출물 검토", Boolean(p.aiReviewOutput)],
+            ["questions", "검토관 질문", Boolean(p.peerQuestions?.length)],
+            ["takeaway", "가져갈 것 하나", Boolean(p.takeaway)],
+          ] as [ModalSection, string, boolean][]
+        ).map(([key, label, done]) => (
+          <li key={key}>
+            {/* 어느 줄이든 눌러 그 단계의 작성물을 팝업으로 본다 */}
+            <button
+              onClick={() => onOpen(key)}
+              className="flex w-full items-center justify-between gap-3 py-2.5 text-left transition hover:opacity-60"
             >
-              열기 ↗
-            </a>
-          ) : (
-            "—"
-          )}
-        </li>
-        <li>
-          <span className="t-caption opacity-50">AI 산출물 검토</span>{" "}
-          {p.aiReviewOutput ? "✅" : "—"}
-        </li>
+              <span className="t-caption opacity-60">{label}</span>
+              <span className="t-caption flex items-center gap-2">
+                {done ? "작성됨" : "—"}
+                <span aria-hidden className="opacity-40">
+                  ↗
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
       </ul>
 
-      {p.aiReviewDesign ? (
-        <details className="mb-4 rounded-md bg-surface-soft p-4">
-          <summary className="t-caption cursor-pointer opacity-60">AI 설계 검토 내용</summary>
-          <p className="t-body-sm mt-3 whitespace-pre-wrap">{p.aiReviewDesign.text}</p>
-        </details>
-      ) : null}
-
-      {p.peerQuestions?.length ? (
-        <details className="mb-4 rounded-md bg-surface-soft p-4">
-          <summary className="t-caption cursor-pointer opacity-60">
-            검토관 질문 {p.peerQuestions.length}개
-          </summary>
-          <ul className="t-body-sm mt-3 space-y-2">
-            {p.peerQuestions.map((q, i) => (
-              <li key={i}>
-                <b>[{q.role}]</b> {q.fromName}: {q.question}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-
       <div className="flex flex-wrap gap-2">
+        {/* 강사 연수라 진행 속도를 강사가 직접 조절한다 — 검토 완료 여부와 무관하게 승인 가능 */}
         <Button
           tone={p.gateApproved ? "ghost" : "primary"}
-          disabled={!p.gateApproved && !ready}
-          title={
-            !ready && !p.gateApproved
-              ? "AI·자기·동료 검토가 모두 끝나야 승인할 수 있습니다."
-              : undefined
-          }
           onClick={() =>
             patchParticipant(sessionId, p.id, { gateApproved: !p.gateApproved })
           }
         >
           {p.gateApproved ? "승인 취소" : "게이트 승인"}
         </Button>
+        {!p.gateApproved && !ready ? (
+          <span className="t-caption self-center opacity-40">검토 3종 미완료</span>
+        ) : null}
       </div>
 
       <div className="mt-5 flex flex-wrap items-end gap-3">

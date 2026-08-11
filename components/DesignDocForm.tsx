@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { patchParticipant } from "@/lib/db";
-import { CUSTOM_ID, DESIGN_SEEDS } from "@/lib/seed-data";
-import { EMPTY_DESIGN_DOC, type DesignDoc, type Participant, type Usage } from "@/lib/types";
+import { CUSTOM_ID, DESIGN_SEEDS, SUBJECT_OPTIONS } from "@/lib/seed-data";
+import {
+  EMPTY_DESIGN_DOC,
+  type DesignDoc,
+  type Participant,
+  type Subject,
+  type Usage,
+} from "@/lib/types";
 import { Button, Field, Notice } from "./ui";
 
 const SAVE_DELAY = 500;
@@ -138,6 +144,15 @@ export function DesignDocForm({
     const seed = DESIGN_SEEDS.find((s) => s.id === value);
     if (!seed) return;
     replaceDoc({ ...seed.doc }, seed.id);
+    // 강사가 과목을 지정하지 않았으면 고른 소재의 과목을 따라간다.
+    if (me.subject === "미정") {
+      patchParticipant(sessionId, me.id, { subject: seed.subject }).catch(() => {});
+    }
+  }
+
+  function setSubject(subject: Subject) {
+    if (readOnly) return;
+    patchParticipant(sessionId, me.id, { subject }).catch(() => {});
   }
 
   function clearAll() {
@@ -184,6 +199,32 @@ export function DesignDocForm({
           <span className={`t-caption ${saved ? "opacity-45" : "opacity-100"}`}>
             {saved ? "저장됨" : "저장 중…"}
           </span>
+        </div>
+      ) : null}
+
+      {/* 기타를 고르면 과목과 소재 제목을 직접 정한다 */}
+      {!readOnly && me.seedId === CUSTOM_ID ? (
+        <div className="grid gap-4 rounded-md bg-surface-soft p-5 md:grid-cols-[10rem_1fr]">
+          <Field label="과목">
+            <select
+              value={me.subject}
+              onChange={(e) => setSubject(e.target.value as Subject)}
+            >
+              {SUBJECT_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="소재 제목" hint="무엇과 무엇의 관계인지 짧게">
+            <input
+              type="text"
+              value={doc.topicTitle}
+              placeholder="예) 물의 깊이 – 수압"
+              onChange={(e) => update("topicTitle", e.target.value)}
+            />
+          </Field>
         </div>
       ) : null}
 
@@ -326,14 +367,19 @@ export function DesignDocView({ doc }: { doc: DesignDoc }) {
         ];
 
   return (
-    <dl className="divide-y divide-hairline-soft">
+    <div>
+      {doc.topicTitle ? (
+        <p className="t-card-title mb-3">{doc.topicTitle}</p>
+      ) : null}
+      <dl className="divide-y divide-hairline-soft">
       {rows.map(([k, v]) => (
         <div key={k} className="grid grid-cols-[7.5rem_1fr] gap-3 py-2">
           <dt className="t-caption pt-1 opacity-50">{k}</dt>
           <dd className="whitespace-pre-wrap">{v || "—"}</dd>
         </div>
-      ))}
-    </dl>
+        ))}
+      </dl>
+    </div>
   );
 }
 

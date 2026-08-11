@@ -68,6 +68,8 @@ export function phaseToStage(phase: Phase): number {
 
 export interface DesignDoc {
   usage: Usage;
+  /** 소재 제목 — 예시를 고르면 예시 제목이, 직접 쓰면 본인이 적은 제목이 들어간다 */
+  topicTitle: string;
   /** 탐구질문 → 화면이 답할 질문 */
   question: string;
   /** 가설 → 예상 그래프 패턴 */
@@ -90,6 +92,7 @@ export interface DesignDoc {
 
 export const EMPTY_DESIGN_DOC: DesignDoc = {
   usage: "verification",
+  topicTitle: "",
   question: "",
   hypothesis: "",
   independentVar: "",
