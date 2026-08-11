@@ -6,6 +6,8 @@ import {
   PHASES,
   type Participant,
 } from "../lib/types.ts";
+import { buildCanvaPrompt } from "../lib/canva-prompt.ts";
+import { DESIGN_SEEDS } from "../lib/seed-data.ts";
 
 function mk(id: string, order: number, extra: Partial<Participant> = {}): Participant {
   return {
@@ -104,6 +106,44 @@ eq(
 
 // 5. 단계 번호는 1~7
 eq(PHASES.map(phaseToStage), [1, 2, 3, 4, 5, 6, 7], "phase → 단계 번호 1~7");
+
+// 6. 캔바 프롬프트: PRD 템플릿의 7줄이 모두 나오고 설계서 값이 들어가야 한다
+const seed = DESIGN_SEEDS.find((s) => s.id === "phy-pendulum")!;
+const prompt = buildCanvaPrompt(seed.doc);
+for (const needle of [
+  "다음 과학 시뮬레이션 위젯을 만들어줘.",
+  "- 목적:",
+  "- 슬라이더:",
+  "- 그래프: x축=",
+  "- 화면에 고정값으로 명시:",
+  "- 예상 패턴:",
+  "로그인/저장/장식 애니메이션 금지",
+]) {
+  eq(prompt.includes(needle), true, `캔바 프롬프트에 "${needle}" 포함`);
+}
+eq(prompt.includes(seed.doc.independentVar), true, "조작변인이 프롬프트에 들어감");
+eq(prompt.includes(seed.doc.dependentVar), true, "종속변인이 프롬프트에 들어감");
+eq(prompt.split("\n").length, 7, "검증용 프롬프트는 7줄");
+
+// 설명용은 정확성 근거 줄이 추가된다
+const expl = buildCanvaPrompt({ ...seed.doc, usage: "explanation", concept: "진자 운동" });
+eq(expl.includes("과학적 정확성 근거"), true, "설명용 프롬프트에 정확성 근거 포함");
+eq(expl.includes("진자 운동"), true, "설명용 프롬프트가 concept 을 목적으로 씀");
+
+// 7. seed 데이터: verification 만 비어 있어야 한다
+for (const s of DESIGN_SEEDS) {
+  eq(s.doc.verification, "", `${s.id}: 검증 기준은 빈 값`);
+  const filled = [
+    s.doc.question,
+    s.doc.hypothesis,
+    s.doc.independentVar,
+    s.doc.dependentVar,
+    s.doc.controlledVars,
+    s.doc.limitations,
+  ].every((v) => v.trim().length > 0);
+  eq(filled, true, `${s.id}: 나머지 6칸은 채워져 있음`);
+}
+eq(DESIGN_SEEDS.length, 8, "예시 풀 8개 (물리3·화학3·생명1·지구1)");
 
 console.log(fails === 0 ? "\nALL PASS" : `\n${fails} FAILED`);
 process.exitCode = fails === 0 ? 0 : 1;
