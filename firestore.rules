@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────
+// 오늘 1회 행사용 규칙 (PRD 5장에 명시된 의도적 트레이드오프)
+//
+// 로그인이 없으므로 인증으로 막을 수 없다. 대신
+//   · 세션 id 를 랜덤 10자로 만들어 경로를 추측하기 어렵게 하고
+//   · 쓰기 가능한 경로를 sessions/ 와 meta/active 로만 좁힌다.
+// 행사가 끝나면 아래 "행사 후" 블록으로 교체할 것.
+// ─────────────────────────────────────────────────────────────
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 현재 활성 세션을 가리키는 포인터. 수강생은 읽기만 하면 되지만
+    // 강사 대시보드도 로그인이 없어 쓰기를 허용한다.
+    match /meta/active {
+      allow read, write: if true;
+    }
+
+    match /sessions/{sessionId} {
+      allow read, write: if true;
+
+      match /participants/{participantId} {
+        allow read, write: if true;
+      }
+    }
+
+    // 그 외 경로는 모두 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// 행사 후에는 아래로 교체해 완전히 잠글 것:
+//
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     match /{document=**} {
+//       allow read, write: if false;
+//     }
+//   }
+// }

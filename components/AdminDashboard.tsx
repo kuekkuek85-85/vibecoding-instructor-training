@@ -32,6 +32,7 @@ export function AdminDashboard() {
     return (
       <Wrap>
         <SeedPanel
+          hasExisting={Boolean(sessionId)}
           onDone={() => setShowSeed(false)}
           onCancel={sessionId ? () => setShowSeed(false) : undefined}
         />
@@ -92,9 +93,11 @@ function Wrap({ children }: { children: React.ReactNode }) {
 /* ---------------- 세션 생성 ---------------- */
 
 function SeedPanel({
+  hasExisting,
   onDone,
   onCancel,
 }: {
+  hasExisting: boolean;
   onDone: () => void;
   onCancel?: () => void;
 }) {
@@ -153,6 +156,15 @@ function SeedPanel({
           <Button
             disabled={busy || people.some((p) => !p.name.trim())}
             onClick={async () => {
+              // 진행 중 세션을 갈아엎는 실수를 막는다.
+              if (
+                hasExisting &&
+                !window.confirm(
+                  "진행 중인 세션이 있습니다. 새 세션을 만들면 수강생 4명이 모두 이름 선택 화면으로 돌아갑니다. 계속할까요?"
+                )
+              ) {
+                return;
+              }
               setBusy(true);
               setErr(null);
               try {
