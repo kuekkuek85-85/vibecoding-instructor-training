@@ -94,6 +94,20 @@ export default function StudentPage() {
 
   const phase = session?.phase ?? "waiting";
 
+  /**
+   * 지나온 단계를 다시 볼 수 있게 한다. null 이면 강사가 열어 둔 단계를 그대로 따라간다.
+   * 강사가 단계를 넘기면 override 를 풀어, 전원이 같은 화면으로 모인다.
+   * (effect 대신 렌더 중 상태 조정 — React 가 권장하는 "props 가 바뀔 때 state 맞추기" 방식)
+   */
+  const [viewOverride, setViewOverride] = useState<Phase | null>(null);
+  const [lastClassPhase, setLastClassPhase] = useState<Phase>(phase);
+  if (phase !== lastClassPhase) {
+    setLastClassPhase(phase);
+    setViewOverride(null);
+  }
+  const viewPhase: Phase = viewOverride ?? phase;
+  const isLookingBack = viewPhase !== phase;
+
   // 내 stage 를 현재 phase 에 맞춰 기록 (강사 대시보드 표시용)
   useEffect(() => {
     if (!sessionId || !me || !session) return;
@@ -162,7 +176,7 @@ export default function StudentPage() {
   }
 
   const partner = findPartner(me, participants);
-  const intro = PHASE_INTRO[phase];
+  const intro = PHASE_INTRO[viewPhase];
 
   return (
     <Shell
@@ -184,21 +198,40 @@ export default function StudentPage() {
         </div>
       }
     >
-      <Stepper phase={phase} gateApproved={me.gateApproved} />
+      <Stepper
+        classPhase={phase}
+        viewPhase={viewPhase}
+        gateApproved={me.gateApproved}
+        onSelect={(p) => setViewOverride(p === phase ? null : p)}
+      />
+
+      {isLookingBack ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface-soft px-5 py-3">
+          <span className="t-body-sm">
+            지나온 <b>{PHASE_LABEL[viewPhase]}</b> 단계를 보고 있습니다. 고치면 그대로 저장됩니다.
+          </span>
+          <button
+            onClick={() => setViewOverride(null)}
+            className="t-caption rounded-pill bg-primary px-4 py-2 text-on-primary"
+          >
+            지금 단계({PHASE_LABEL[phase]})로 돌아가기
+          </button>
+        </div>
+      ) : null}
 
       {/* 단계마다 색상 블록 하나 — 이 시스템의 섹션 브레이크 */}
-      <ColorBlock tone={PHASE_TONE[phase]}>
+      <ColorBlock tone={PHASE_TONE[viewPhase]}>
         <Eyebrow className="mb-4 opacity-100">
-          Stage {String(phaseToStage(phase)).padStart(2, "0")} / 07 —{" "}
-          {PHASE_LABEL[phase]}
+          Stage {String(phaseToStage(viewPhase)).padStart(2, "0")} / 07 —{" "}
+          {PHASE_LABEL[viewPhase]}
         </Eyebrow>
         <h2 className="t-display-lg max-w-2xl">{intro.title}</h2>
         <p className="t-body-lg mt-5 max-w-xl">{intro.lead}</p>
       </ColorBlock>
 
-      {phase === "waiting" ? <QuoteRoll /> : null}
+      {viewPhase === "waiting" ? <QuoteRoll /> : null}
 
-      {phase === "design" ? (
+      {viewPhase === "design" ? (
         <Card>
           <SectionTitle
             eyebrow="Design doc"
@@ -210,17 +243,17 @@ export default function StudentPage() {
         </Card>
       ) : null}
 
-      {phase === "design_review" ? (
+      {viewPhase === "design_review" ? (
         <DesignReviewStage sessionId={sessionId} me={me} partner={partner} />
       ) : null}
 
-      {phase === "build" ? <BuildStage sessionId={sessionId} me={me} /> : null}
+      {viewPhase === "build" ? <BuildStage sessionId={sessionId} me={me} /> : null}
 
-      {phase === "output_review" ? (
+      {viewPhase === "output_review" ? (
         <OutputReviewStage sessionId={sessionId} me={me} />
       ) : null}
 
-      {phase === "present" ? (
+      {viewPhase === "present" ? (
         <PresentStage
           sessionId={sessionId}
           me={me}
@@ -229,7 +262,7 @@ export default function StudentPage() {
         />
       ) : null}
 
-      {phase === "wrapup" ? <WrapupStage sessionId={sessionId} me={me} /> : null}
+      {viewPhase === "wrapup" ? <WrapupStage sessionId={sessionId} me={me} /> : null}
     </Shell>
   );
 }
