@@ -9,6 +9,7 @@ import { Badge, Button, Card, Field, Notice, SectionTitle } from "@/components/u
 import { buildCanvaPrompt } from "@/lib/canva-prompt";
 import { addPeerQuestion, patchParticipant } from "@/lib/db";
 import {
+  designDocReady,
   findPartner,
   PHASE_LABEL,
   phaseToStage,
@@ -212,8 +213,14 @@ function DesignReviewStage({
           kind="design"
           designDoc={me.designDoc}
           review={me.aiReviewDesign}
-          disabled={dirty}
-          disabledReason="설계서를 저장하는 중입니다. 입력칸 밖을 한 번 클릭해 주세요."
+          disabled={dirty || !designDocReady(me.designDoc)}
+          disabledReason={
+            dirty
+              ? "설계서를 저장하는 중입니다. 입력칸 밖을 한 번 클릭해 주세요."
+              : !designDocReady(me.designDoc)
+                ? "설계서의 빈 칸을 먼저 채워 주세요. 특히 ★ 검증 기준 칸이 비어 있으면 의미 있는 검토를 받을 수 없습니다."
+                : undefined
+          }
         />
       </Card>
 
@@ -489,8 +496,12 @@ function OutputReviewStage({
           designDoc={me.designDoc}
           outputSummary={me.outputSummary}
           review={me.aiReviewOutput}
-          disabled={!me.outputSummary.trim()}
-          disabledReason="결과 요약을 먼저 저장해 주세요."
+          disabled={!me.outputSummary.trim() || !designDocReady(me.designDoc)}
+          disabledReason={
+            !designDocReady(me.designDoc)
+              ? "설계서가 비어 있습니다. 2단계로 돌아가 먼저 채워 주세요."
+              : "결과 요약을 먼저 저장해 주세요."
+          }
         />
       </Card>
 

@@ -126,6 +126,17 @@ export interface SessionDoc {
   createdAt: number;
 }
 
+/**
+ * AI 검토를 요청할 만큼 설계서가 채워졌는지.
+ * 빈 설계서로 검토를 부르면 "가설이 비어 있지만…" 하면서 쓸모없는 피드백이 돌아온다.
+ */
+export function designDocReady(d: DesignDoc): boolean {
+  const common = [d.question, d.independentVar, d.dependentVar, d.controlledVars];
+  const extra =
+    d.usage === "explanation" ? [d.concept] : [d.hypothesis, d.verification];
+  return [...common, ...extra].every((v) => v.trim().length > 0);
+}
+
 /** 설계 검토 3종(AI·자기·동료)이 모두 끝났는지 — 게이트 승인 버튼 활성화 조건 */
 export function designReviewComplete(p: Participant): boolean {
   return Boolean(

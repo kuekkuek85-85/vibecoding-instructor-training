@@ -183,6 +183,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "요청 형식이 올바르지 않습니다." }, { status: 400 });
   }
 
+  // 빈 설계서로 부르면 "가설이 비어 있지만…" 하는 쓸모없는 검토가 돌아온다.
+  // 화면에서도 막지만, 토큰 낭비를 줄이기 위해 서버에서도 한 번 더 거른다.
+  const filled =
+    doc.usage === "explanation"
+      ? [doc.question, doc.concept, doc.independentVar, doc.dependentVar]
+      : [doc.question, doc.hypothesis, doc.independentVar, doc.dependentVar];
+  if (filled.some((v) => typeof v !== "string" || !v.trim())) {
+    return NextResponse.json(
+      { error: "설계서가 아직 비어 있습니다. 빈 칸을 채운 뒤 검토를 요청해 주세요." },
+      { status: 400 }
+    );
+  }
+
   const prompt = buildPrompt(kind, doc, body.outputSummary ?? "");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
