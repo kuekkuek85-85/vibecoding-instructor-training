@@ -37,14 +37,19 @@ import {
   WRAPUP_NOTES_HEADER,
 } from "@/lib/wrapup-notes";
 
-const CANVA_CODE_URL = "https://www.canva.com/code/";
+/** 팀에 이미 들어간 사람이 곧장 가는 곳 */
+const CANVA_AI_URL = "https://www.canva.com/ai";
 
 /**
- * 캔바로 보내는 링크. 강사의 Canva Pro 팀 초대 링크를 쓰면 수강생이 그 계정을
- * 함께 쓸 수 있다. 초대 토큰은 저장소에 남기지 않도록 환경변수로만 받는다.
+ * 강사의 Canva Pro 팀 초대 링크. 이 링크로 들어가면 팀 참여 화면이 먼저 뜨고,
+ * 참여하면 강사 계정을 함께 쓸 수 있다.
+ * 초대 토큰은 저장소에 남기지 않도록 환경변수로만 받는다.
  * (배포된 페이지의 JS 에는 어차피 들어가므로, 행사 후 초대 링크는 재발급할 것)
  */
-const CANVA_URL = process.env.NEXT_PUBLIC_CANVA_INVITE_URL || CANVA_CODE_URL;
+const CANVA_INVITE_URL = process.env.NEXT_PUBLIC_CANVA_INVITE_URL || "";
+
+/** 초대 링크가 설정돼 있으면 그쪽으로, 없으면 캔바 AI 로 바로 보낸다 */
+const CANVA_URL = CANVA_INVITE_URL || CANVA_AI_URL;
 
 /** 각 단계 색상 블록에 실릴 헤드라인과 리드 문장 */
 const PHASE_INTRO: Record<Phase, { title: string; lead: string }> = {
@@ -546,9 +551,9 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
             캔바 코드 열기 ↗
           </a>
           {/* 초대 링크로 들어가면 팀 참여 화면이 먼저 뜬다. 이미 참여한 뒤에는 이쪽. */}
-          {CANVA_URL !== CANVA_CODE_URL ? (
+          {CANVA_INVITE_URL ? (
             <a
-              href={CANVA_CODE_URL}
+              href={CANVA_AI_URL}
               target="_blank"
               rel="noreferrer"
               className="t-caption underline underline-offset-4 opacity-60 hover:opacity-100"
