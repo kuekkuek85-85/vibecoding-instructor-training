@@ -150,6 +150,9 @@ export const DESIGN_SEEDS: DesignSeed[] = [
   },
 ];
 
+/** 예시 풀에 없는 소재를 직접 쓰겠다는 표시. seedId 에 이 값이 들어간다. */
+export const CUSTOM_ID = "custom";
+
 export function findSeed(id: string | null): DesignSeed | undefined {
   if (!id) return undefined;
   return DESIGN_SEEDS.find((s) => s.id === id);

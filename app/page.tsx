@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AiReviewPanel } from "@/components/AiReviewPanel";
 import { CopyButton, DesignDocForm, DesignDocView } from "@/components/DesignDocForm";
+import { QuoteRoll } from "@/components/QuoteRoll";
 import { SlideSync } from "@/components/SlideSync";
 import { Stepper } from "@/components/Stepper";
 import {
@@ -177,7 +178,12 @@ export default function StudentPage() {
         <p className="t-body-lg mt-5 max-w-xl">{intro.lead}</p>
       </ColorBlock>
 
-      {phase === "waiting" ? <SlideSync session={session} /> : null}
+      {phase === "waiting" ? (
+        <div className="space-y-6">
+          <QuoteRoll />
+          <SlideSync session={session} />
+        </div>
+      ) : null}
 
       {phase === "design" ? (
         <Card>

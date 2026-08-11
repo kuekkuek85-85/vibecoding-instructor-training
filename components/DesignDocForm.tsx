@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { patchParticipant } from "@/lib/db";
-import { DESIGN_SEEDS } from "@/lib/seed-data";
-import type { DesignDoc, Participant, Usage } from "@/lib/types";
+import { CUSTOM_ID, DESIGN_SEEDS } from "@/lib/seed-data";
+import { EMPTY_DESIGN_DOC, type DesignDoc, type Participant, type Usage } from "@/lib/types";
 import { Button, Field, Notice } from "./ui";
 
 const SAVE_DELAY = 500;
@@ -109,24 +109,40 @@ export function DesignDocForm({
     timer.current = setTimeout(flush, SAVE_DELAY);
   }
 
-  function applySeed(seedId: string) {
-    const seed = DESIGN_SEEDS.find((s) => s.id === seedId);
-    if (!seed || readOnly) return;
-    // 예시가 문서 전체를 덮어쓰므로 대기 중인 저장은 취소하고,
-    // revision 을 올려 이미 날아간 요청의 결과도 무시한다.
+  /** 문서 전체를 한 번에 덮어쓴다. 대기 중인 낱개 저장은 취소하고 revision 을 올려
+   *  이미 날아간 요청의 응답도 무시한다. */
+  function replaceDoc(next: DesignDoc, seedId: string | null) {
+    if (readOnly) return;
     if (timer.current) clearTimeout(timer.current);
     pending.current.clear();
     revision.current += 1;
     const rev = revision.current;
-    const next = { ...seed.doc };
     setDoc(next);
     latest.current = next;
     setDirty(true);
-    patchParticipant(sessionId, me.id, { designDoc: next, seedId: seed.id })
+    patchParticipant(sessionId, me.id, { designDoc: next, seedId })
       .then(() => {
         if (rev === revision.current && pending.current.size === 0) setDirty(false);
       })
       .catch(() => setDirty(true));
+  }
+
+  function onPickSource(value: string) {
+    if (readOnly) return;
+    if (value === CUSTOM_ID) {
+      // 직접 작성으로 바꾸는 것만으로 쓰던 내용을 지우지 않는다.
+      // 백지에서 시작하려면 옆의 "칸 비우기"를 누르면 된다.
+      replaceDoc(doc, CUSTOM_ID);
+      return;
+    }
+    const seed = DESIGN_SEEDS.find((s) => s.id === value);
+    if (!seed) return;
+    replaceDoc({ ...seed.doc }, seed.id);
+  }
+
+  function clearAll() {
+    // 용도만 남기고 일곱 칸을 비운다.
+    replaceDoc({ ...EMPTY_DESIGN_DOC, usage: doc.usage }, CUSTOM_ID);
   }
 
   /** 포커스를 잃으면 디바운스를 기다리지 않고 즉시 저장한다. */
@@ -142,11 +158,11 @@ export function DesignDocForm({
     <div className="space-y-4" onBlur={readOnly ? undefined : flushNow}>
       {!readOnly ? (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="t-caption opacity-60">소재 예시</span>
+          <span className="t-caption opacity-60">소재</span>
           <select
             className="max-w-xs"
             value={me.seedId ?? ""}
-            onChange={(e) => applySeed(e.target.value)}
+            onChange={(e) => onPickSource(e.target.value)}
           >
             <option value="">— 선택 —</option>
             {DESIGN_SEEDS.map((s) => (
@@ -154,7 +170,17 @@ export function DesignDocForm({
                 [{s.subject}] {s.title}
               </option>
             ))}
+            <option value={CUSTOM_ID}>기타 — 직접 작성</option>
           </select>
+          {me.seedId === CUSTOM_ID ? (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="t-caption rounded-pill border border-hairline px-3 py-1.5 transition hover:border-ink"
+            >
+              칸 비우기
+            </button>
+          ) : null}
           <span className={`t-caption ${saved ? "opacity-45" : "opacity-100"}`}>
             {saved ? "저장됨" : "저장 중…"}
           </span>
@@ -176,6 +202,7 @@ export function DesignDocForm({
         <textarea
           value={doc.question}
           readOnly={readOnly}
+          placeholder="예) 물의 온도가 높아지면 설탕이 녹는 속도는 얼마나 빨라질까?"
           onChange={(e) => update("question", e.target.value)}
         />
       </Field>
@@ -185,6 +212,7 @@ export function DesignDocForm({
           <textarea
             value={doc.concept}
             readOnly={readOnly}
+            placeholder="예) 용해 속도는 온도에 따라 달라진다"
             onChange={(e) => update("concept", e.target.value)}
           />
         </Field>
@@ -194,6 +222,7 @@ export function DesignDocForm({
         <textarea
           value={doc.hypothesis}
           readOnly={readOnly}
+          placeholder="예) 온도가 높을수록 녹는 시간이 짧아지고, 그 폭은 점점 완만해진다"
           onChange={(e) => update("hypothesis", e.target.value)}
         />
       </Field>
@@ -203,6 +232,7 @@ export function DesignDocForm({
           <textarea
             value={doc.independentVar}
             readOnly={readOnly}
+            placeholder="예) 물의 온도 (10 ℃ ~ 80 ℃)"
             onChange={(e) => update("independentVar", e.target.value)}
           />
         </Field>
@@ -210,6 +240,7 @@ export function DesignDocForm({
           <textarea
             value={doc.dependentVar}
             readOnly={readOnly}
+            placeholder="예) 완전히 녹는 데 걸리는 시간 (초)"
             onChange={(e) => update("dependentVar", e.target.value)}
           />
         </Field>
@@ -219,6 +250,7 @@ export function DesignDocForm({
         <textarea
           value={doc.controlledVars}
           readOnly={readOnly}
+          placeholder="예) 설탕 5 g, 물 100 mL, 젓지 않음, 대기압 1 atm"
           onChange={(e) => update("controlledVars", e.target.value)}
         />
       </Field>
@@ -232,6 +264,7 @@ export function DesignDocForm({
           <textarea
             value={doc.accuracyBasis}
             readOnly={readOnly}
+            placeholder="예) 중학교 과학 교과서의 용해 단원 설명과 대조한다"
             onChange={(e) => update("accuracyBasis", e.target.value)}
           />
         </Field>
@@ -244,6 +277,7 @@ export function DesignDocForm({
           <textarea
             value={doc.verification}
             readOnly={readOnly}
+            placeholder="예) 20 ℃와 60 ℃에서 실제로 녹는 시간을 재어, 화면이 보여 준 값과 10 % 이내로 맞는지 확인한다"
             onChange={(e) => update("verification", e.target.value)}
           />
         </Field>
@@ -253,6 +287,7 @@ export function DesignDocForm({
         <textarea
           value={doc.limitations}
           readOnly={readOnly}
+          placeholder="예) 설탕 입자 크기가 같다고 가정했고, 물의 증발과 대류를 무시했다"
           onChange={(e) => update("limitations", e.target.value)}
         />
       </Field>
