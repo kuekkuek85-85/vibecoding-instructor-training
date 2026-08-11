@@ -6,32 +6,42 @@ import { DESIGN_SEEDS } from "@/lib/seed-data";
 import type { DesignDoc, Participant, Usage } from "@/lib/types";
 import { Button, Field, Notice } from "./ui";
 
-const SAVE_DELAY = 600;
+const SAVE_DELAY = 500;
 
 export function DesignDocForm({
   sessionId,
   me,
   readOnly = false,
   onFieldChange,
+  onDirtyChange,
 }: {
   sessionId: string;
   me: Participant;
   readOnly?: boolean;
   /** 자기 검토 단계에서 "어느 칸을 고쳤는지" 추적하는 콜백 */
   onFieldChange?: (field: keyof DesignDoc) => void;
+  /** 저장 대기 중인 편집이 있는지 알린다 (AI 검토 버튼 잠금용) */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [doc, setDoc] = useState<DesignDoc>(me.designDoc);
   const [saved, setSaved] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const remote = useRef(JSON.stringify(me.designDoc));
+  /** 아직 서버에 반영되지 않은 편집이 있으면 true — 원격 스냅샷 덮어쓰기를 막는다 */
+  const dirty = useRef(false);
+  /** 편집한 필드만 골라 저장하기 위한 목록 (다른 탭의 다른 필드 수정을 지우지 않음) */
+  const pending = useRef(new Set<keyof DesignDoc>());
 
-  // 다른 기기/강사가 바꾼 값이 오면 반영 (내가 편집 중이 아닐 때만)
+  function setDirty(v: boolean) {
+    dirty.current = v;
+    setSaved(!v);
+    onDirtyChange?.(v);
+  }
+
+  // 다른 기기/강사가 바꾼 값은 내가 편집 중이 아닐 때만 반영한다.
+  // saved 를 의존성에 넣어, 저장이 끝나 깨끗해진 직후에도 한 번 동기화되게 한다.
   useEffect(() => {
-    const next = JSON.stringify(me.designDoc);
-    if (next !== remote.current && saved) {
-      remote.current = next;
-      setDoc(me.designDoc);
-    }
+    if (dirty.current) return;
+    setDoc(me.designDoc);
   }, [me.designDoc, saved]);
 
   useEffect(() => {
@@ -40,37 +50,57 @@ export function DesignDocForm({
     };
   }, []);
 
+  function flush(next: DesignDoc) {
+    const fields = [...pending.current];
+    pending.current.clear();
+    if (fields.length === 0) return;
+    // 필드 단위 업데이트: 같은 참가자를 두 탭에서 열어도 서로 다른 칸은 살아남는다.
+    const patch: Record<string, string> = {};
+    for (const f of fields) patch[`designDoc.${f}`] = next[f];
+    patchParticipant(sessionId, me.id, patch)
+      .then(() => {
+        // 저장하는 사이에 또 입력했다면 아직 dirty 로 남겨 둔다.
+        if (pending.current.size === 0) setDirty(false);
+      })
+      .catch(() => setDirty(true));
+  }
+
   function update(field: keyof DesignDoc, value: string) {
     if (readOnly) return;
     const next = { ...doc, [field]: value } as DesignDoc;
     setDoc(next);
-    setSaved(false);
+    pending.current.add(field);
+    setDirty(true);
     onFieldChange?.(field);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      remote.current = JSON.stringify(next);
-      patchParticipant(sessionId, me.id, { designDoc: next })
-        .then(() => setSaved(true))
-        .catch(() => setSaved(false));
-    }, SAVE_DELAY);
+    timer.current = setTimeout(() => flush(next), SAVE_DELAY);
   }
 
   function applySeed(seedId: string) {
     const seed = DESIGN_SEEDS.find((s) => s.id === seedId);
     if (!seed || readOnly) return;
+    // 예시를 통째로 덮어쓰므로 대기 중인 낱개 편집 저장은 취소한다.
+    if (timer.current) clearTimeout(timer.current);
+    pending.current.clear();
     const next = { ...seed.doc };
     setDoc(next);
-    remote.current = JSON.stringify(next);
-    setSaved(false);
+    setDirty(true);
     patchParticipant(sessionId, me.id, { designDoc: next, seedId: seed.id })
-      .then(() => setSaved(true))
-      .catch(() => setSaved(false));
+      .then(() => setDirty(false))
+      .catch(() => setDirty(true));
+  }
+
+  /** 포커스를 잃으면 디바운스를 기다리지 않고 즉시 저장한다. */
+  function flushNow() {
+    if (timer.current) clearTimeout(timer.current);
+    flush(doc);
   }
 
   const isExplanation = doc.usage === "explanation";
 
   return (
-    <div className="space-y-4">
+    // onBlur 는 버블링되므로 어느 칸이든 포커스를 잃으면 바로 저장된다.
+    <div className="space-y-4" onBlur={readOnly ? undefined : flushNow}>
       {!readOnly ? (
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted">소재 예시 불러오기</span>

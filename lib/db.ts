@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -14,6 +15,7 @@ import { db } from "./firebase";
 import {
   EMPTY_DESIGN_DOC,
   type Participant,
+  type PeerQuestion,
   type SessionDoc,
   type Subject,
 } from "./types";
@@ -140,4 +142,18 @@ export async function patchParticipant(
   data: Record<string, unknown>
 ): Promise<void> {
   await updateDoc(participantRef(sid, pid), data);
+}
+
+/**
+ * 검토관 질문 추가. 세 명이 동시에 제출해도 유실되지 않도록
+ * 배열을 읽어 다시 쓰지 않고 arrayUnion 으로 덧붙인다.
+ */
+export async function addPeerQuestion(
+  sid: string,
+  presenterId: string,
+  q: PeerQuestion
+): Promise<void> {
+  await updateDoc(participantRef(sid, presenterId), {
+    peerQuestions: arrayUnion(q),
+  });
 }

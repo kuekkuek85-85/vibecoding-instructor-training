@@ -7,7 +7,7 @@ import { SlideSync } from "@/components/SlideSync";
 import { Stepper } from "@/components/Stepper";
 import { Badge, Button, Card, Field, Notice, SectionTitle } from "@/components/ui";
 import { buildCanvaPrompt } from "@/lib/canva-prompt";
-import { patchParticipant } from "@/lib/db";
+import { addPeerQuestion, patchParticipant } from "@/lib/db";
 import {
   findPartner,
   PHASE_LABEL,
@@ -15,7 +15,6 @@ import {
   reviewerRoleFor,
   type DesignDoc,
   type Participant,
-  type PeerQuestion,
 } from "@/lib/types";
 import { useMyParticipantId, useSession } from "@/lib/useSession";
 
@@ -193,6 +192,7 @@ function DesignReviewStage({
   const [note, setNote] = useState(me.selfReviewDesign?.note ?? "");
   const [peerComment, setPeerComment] = useState("");
   const [savedSelf, setSavedSelf] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const alreadyCommented = partner?.peerReviewDesign?.fromId === me.id;
 
@@ -208,6 +208,8 @@ function DesignReviewStage({
           kind="design"
           designDoc={me.designDoc}
           review={me.aiReviewDesign}
+          disabled={dirty}
+          disabledReason="설계서를 저장하는 중입니다. 입력칸 밖을 한 번 클릭해 주세요."
         />
       </Card>
 
@@ -220,6 +222,7 @@ function DesignReviewStage({
             sessionId={sessionId}
             me={me}
             onFieldChange={(f) => setChangedField(f)}
+            onDirtyChange={setDirty}
           />
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="고친 칸">
@@ -596,17 +599,11 @@ function PresentStage({
               <Button
                 disabled={!question.trim()}
                 onClick={async () => {
-                  const next: PeerQuestion[] = [
-                    ...(presenter.peerQuestions ?? []),
-                    {
-                      fromId: me.id,
-                      fromName: me.name,
-                      role,
-                      question: question.trim(),
-                    },
-                  ];
-                  await patchParticipant(sessionId, presenter.id, {
-                    peerQuestions: next,
+                  await addPeerQuestion(sessionId, presenter.id, {
+                    fromId: me.id,
+                    fromName: me.name,
+                    role,
+                    question: question.trim(),
                   });
                   setQuestion("");
                 }}
