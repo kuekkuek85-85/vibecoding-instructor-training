@@ -84,10 +84,8 @@ export async function createSession(people: SeedInput[]): Promise<string> {
   const batch = writeBatch(db);
 
   const session: SessionDoc = {
-    currentSlide: 0,
     phase: "waiting",
     presenterId: null,
-    slides: [],
     createdAt: Date.now(),
   };
   batch.set(sessionRef(sid), session);

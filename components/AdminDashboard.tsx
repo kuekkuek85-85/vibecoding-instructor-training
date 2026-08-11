@@ -228,10 +228,6 @@ function SessionBar({
   participants: Participant[];
   onNewSession: () => void;
 }) {
-  const [slidesText, setSlidesText] = useState((session.slides ?? []).join("\n"));
-  const [showSlides, setShowSlides] = useState(false);
-  const slideCount = session.slides?.length ?? 0;
-
   return (
     <Card>
       <div className="space-y-4">
@@ -264,62 +260,7 @@ function SessionBar({
               </option>
             ))}
           </select>
-
-          <span className="t-caption ml-4 opacity-50">Slides</span>
-          <Button
-            tone="ghost"
-            disabled={slideCount === 0 || session.currentSlide <= 0}
-            onClick={() =>
-              patchSession(sessionId, {
-                currentSlide: Math.max(0, session.currentSlide - 1),
-              })
-            }
-          >
-            ‹ 이전
-          </Button>
-          <span className="t-caption tabular-nums">
-            {slideCount === 0 ? "없음" : `${session.currentSlide + 1} / ${slideCount}`}
-          </span>
-          <Button
-            tone="ghost"
-            disabled={slideCount === 0 || session.currentSlide >= slideCount - 1}
-            onClick={() =>
-              patchSession(sessionId, {
-                currentSlide: Math.min(slideCount - 1, session.currentSlide + 1),
-              })
-            }
-          >
-            다음 ›
-          </Button>
-          <Button tone="ghost" onClick={() => setShowSlides((v) => !v)}>
-            {showSlides ? "닫기" : "슬라이드 설정"}
-          </Button>
         </div>
-
-        {showSlides ? (
-          <div className="space-y-2">
-            <Field label="슬라이드 이미지 URL (한 줄에 하나)">
-              <textarea
-                className="min-h-32"
-                value={slidesText}
-                onChange={(e) => setSlidesText(e.target.value)}
-              />
-            </Field>
-            <Button
-              onClick={() =>
-                patchSession(sessionId, {
-                  slides: slidesText
-                    .split("\n")
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                  currentSlide: 0,
-                })
-              }
-            >
-              슬라이드 저장
-            </Button>
-          </div>
-        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
           <span className="t-caption opacity-50">

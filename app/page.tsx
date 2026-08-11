@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AiReviewPanel } from "@/components/AiReviewPanel";
 import { CopyButton, DesignDocForm, DesignDocView } from "@/components/DesignDocForm";
 import { QuoteRoll } from "@/components/QuoteRoll";
-import { SlideSync } from "@/components/SlideSync";
 import { Stepper } from "@/components/Stepper";
 import {
   Badge,
@@ -187,12 +186,7 @@ export default function StudentPage() {
         <p className="t-body-lg mt-5 max-w-xl">{intro.lead}</p>
       </ColorBlock>
 
-      {phase === "waiting" ? (
-        <div className="space-y-6">
-          <QuoteRoll />
-          <SlideSync session={session} />
-        </div>
-      ) : null}
+      {phase === "waiting" ? <QuoteRoll /> : null}
 
       {phase === "design" ? (
         <Card>

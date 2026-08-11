@@ -153,10 +153,8 @@ export interface Participant {
 }
 
 export interface SessionDoc {
-  currentSlide: number;
   phase: Phase;
   presenterId: string | null;
-  slides: string[];
   createdAt: number;
 }
 
