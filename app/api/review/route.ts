@@ -9,7 +9,8 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 // PRD 수용 기준: 10초 안에 응답하거나 실패 안내가 떠야 한다.
 const TIMEOUT_MS = 9_000;
 
-// 4명이 쓰는 1회성 행사이므로 인스턴스 메모리 카운터로 충분하다.
+// 인스턴스 메모리 카운터라 서버가 여러 개로 늘어나면 전역 상한이 되지는 않는다.
+// 4명이 두 시간 쓰는 1회성 행사에서 폭주만 막으면 되므로 외부 저장소는 두지 않는다.
 const RATE_LIMIT = { windowMs: 60_000, max: 20 };
 const hits = new Map<string, number[]>();
 
@@ -23,8 +24,9 @@ function rateLimited(key: string): boolean {
 }
 
 /** 설계서 값은 데이터일 뿐이므로, 모델이 그 안의 지시문을 따르지 않도록 감싼다. */
-function asData(v: string): string {
-  return (v || "(비어 있음)").replace(/[\r\n]+/g, " ").slice(0, 600);
+function asData(v: unknown): string {
+  if (typeof v !== "string" || !v.trim()) return "(비어 있음)";
+  return v.replace(/[\r\n]+/g, " ").slice(0, 600);
 }
 
 type Kind = "design" | "output";
@@ -113,6 +115,7 @@ function buildPrompt(kind: Kind, doc: DesignDoc, outputSummary: string): string 
       "",
       "[시뮬레이션 결과 요약]",
       asData(outputSummary),
+      "[자료 끝]",
       "",
       "출력 형식:",
       "정확성 확인: (1~2문장)",
@@ -133,7 +136,8 @@ function buildPrompt(kind: Kind, doc: DesignDoc, outputSummary: string): string 
     docBlock(doc),
     "",
     "[시뮬레이션 결과 요약]",
-    outputSummary || "(수강생이 아직 요약을 적지 않았습니다)",
+    asData(outputSummary),
+    "[자료 끝]",
     "",
     "출력 형식:",
     "가설 대조: (1~2문장)",

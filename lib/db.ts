@@ -147,6 +147,10 @@ export async function patchParticipant(
 /**
  * 검토관 질문 추가. 세 명이 동시에 제출해도 유실되지 않도록
  * 배열을 읽어 다시 쓰지 않고 arrayUnion 으로 덧붙인다.
+ *
+ * arrayUnion 은 객체가 완전히 같을 때만 중복을 걸러 내므로, 같은 사람이 문구를
+ * 바꿔 두 번 제출하는 것까지는 막지 못한다. 그 부분은 화면에서 이미 제출한
+ * 검토관에게 입력폼을 감추는 것으로 처리한다(발표 1회당 1명 1질문).
  */
 export async function addPeerQuestion(
   sid: string,

@@ -20,10 +20,23 @@ export interface SessionState {
   error: string | null;
 }
 
+/**
+ * 구독 데이터를 그 데이터가 속한 세션 id 와 함께 들고 다닌다.
+ * 강사가 행사 도중 새 세션을 만들면 sessionId 는 즉시 바뀌지만 새 스냅샷은
+ * 조금 뒤에 도착한다. 그 사이에 이전 세션의 참가자 목록을 내보내면 수강생이
+ * 없는 사람을 고르거나 엉뚱한 문서에 stage 를 쓰게 된다.
+ */
+interface Scoped<T> {
+  sid: string;
+  data: T;
+}
+
 export function useSession(): SessionState {
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [session, setSession] = useState<SessionDoc | null>(null);
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [session, setSession] = useState<Scoped<SessionDoc | null> | null>(null);
+  const [participants, setParticipants] = useState<Scoped<Participant[]> | null>(
+    null
+  );
   const [loading, setLoading] = useState(firebaseConfigured);
   const [error, setError] = useState<string | null>(
     firebaseConfigured ? null : NO_CONFIG_MSG
@@ -45,11 +58,16 @@ export function useSession(): SessionState {
 
   useEffect(() => {
     if (!sessionId) return;
-    const unsubS = subscribeSession(sessionId, setSession, (e) =>
-      setError(`세션 구독 실패: ${e.message}`)
+    const sid = sessionId;
+    const unsubS = subscribeSession(
+      sid,
+      (s) => setSession({ sid, data: s }),
+      (e) => setError(`세션 구독 실패: ${e.message}`)
     );
-    const unsubP = subscribeParticipants(sessionId, setParticipants, (e) =>
-      setError(`참가자 구독 실패: ${e.message}`)
+    const unsubP = subscribeParticipants(
+      sid,
+      (list) => setParticipants({ sid, data: list }),
+      (e) => setError(`참가자 구독 실패: ${e.message}`)
     );
     return () => {
       unsubS();
@@ -57,11 +75,12 @@ export function useSession(): SessionState {
     };
   }, [sessionId]);
 
-  // 세션이 없으면 이전 세션의 잔여 데이터를 내보내지 않는다.
+  // 현재 세션의 스냅샷이 도착하기 전까지는 아무것도 내보내지 않는다.
   return {
     sessionId,
-    session: sessionId ? session : null,
-    participants: sessionId ? participants : [],
+    session: session && session.sid === sessionId ? session.data : null,
+    participants:
+      participants && participants.sid === sessionId ? participants.data : [],
     loading,
     error,
   };

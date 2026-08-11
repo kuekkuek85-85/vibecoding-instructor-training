@@ -50,50 +50,89 @@ export function DesignDocForm({
     };
   }, []);
 
-  function flush(next: DesignDoc) {
+  /**
+   * 저장은 한 번에 하나씩만 보낸다. 요청이 겹쳐 역순으로 끝나면 옛 값이
+   * 최신 입력을 덮어쓸 수 있기 때문이다. 저장 중에 들어온 편집은 pending 에
+   * 쌓였다가 다음 flush 에서 함께 나간다.
+   */
+  const inFlight = useRef(false);
+  /** 예시 적용처럼 문서를 통째로 바꾸는 동작이 일어난 횟수 — 오래된 응답을 무시하는 데 쓴다 */
+  const revision = useRef(0);
+  const latest = useRef(doc);
+  latest.current = doc;
+
+  function flush() {
+    if (readOnly || inFlight.current) return;
     const fields = [...pending.current];
-    pending.current.clear();
     if (fields.length === 0) return;
-    // 필드 단위 업데이트: 같은 참가자를 두 탭에서 열어도 서로 다른 칸은 살아남는다.
+
+    const rev = revision.current;
+    const snapshot = latest.current;
     const patch: Record<string, string> = {};
-    for (const f of fields) patch[`designDoc.${f}`] = next[f];
+    // 필드 단위 업데이트: 같은 참가자를 두 탭에서 열어도 서로 다른 칸은 살아남는다.
+    for (const f of fields) patch[`designDoc.${f}`] = snapshot[f];
+
+    inFlight.current = true;
     patchParticipant(sessionId, me.id, patch)
       .then(() => {
-        // 저장하는 사이에 또 입력했다면 아직 dirty 로 남겨 둔다.
+        // 그 사이 예시를 적용해 문서가 통째로 바뀌었다면 이 저장 결과는 버린다.
+        if (rev !== revision.current) return;
+        // 성공한 필드만 제거한다. 저장 도중 다시 입력한 필드는 남아 다음에 나간다.
+        for (const f of fields) {
+          if (snapshot[f] === latest.current[f]) pending.current.delete(f);
+        }
         if (pending.current.size === 0) setDirty(false);
       })
-      .catch(() => setDirty(true));
+      .catch(() => {
+        // 실패한 필드는 pending 에 그대로 남겨 두어 다음 입력·blur 때 다시 시도한다.
+        setDirty(true);
+      })
+      .finally(() => {
+        inFlight.current = false;
+        // 저장 중에 쌓인 편집이 있으면 이어서 내보낸다.
+        if (pending.current.size > 0) {
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = setTimeout(flush, SAVE_DELAY);
+        }
+      });
   }
 
   function update(field: keyof DesignDoc, value: string) {
     if (readOnly) return;
     const next = { ...doc, [field]: value } as DesignDoc;
     setDoc(next);
+    latest.current = next;
     pending.current.add(field);
     setDirty(true);
     onFieldChange?.(field);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => flush(next), SAVE_DELAY);
+    timer.current = setTimeout(flush, SAVE_DELAY);
   }
 
   function applySeed(seedId: string) {
     const seed = DESIGN_SEEDS.find((s) => s.id === seedId);
     if (!seed || readOnly) return;
-    // 예시를 통째로 덮어쓰므로 대기 중인 낱개 편집 저장은 취소한다.
+    // 예시가 문서 전체를 덮어쓰므로 대기 중인 저장은 취소하고,
+    // revision 을 올려 이미 날아간 요청의 결과도 무시한다.
     if (timer.current) clearTimeout(timer.current);
     pending.current.clear();
+    revision.current += 1;
+    const rev = revision.current;
     const next = { ...seed.doc };
     setDoc(next);
+    latest.current = next;
     setDirty(true);
     patchParticipant(sessionId, me.id, { designDoc: next, seedId: seed.id })
-      .then(() => setDirty(false))
+      .then(() => {
+        if (rev === revision.current && pending.current.size === 0) setDirty(false);
+      })
       .catch(() => setDirty(true));
   }
 
   /** 포커스를 잃으면 디바운스를 기다리지 않고 즉시 저장한다. */
   function flushNow() {
     if (timer.current) clearTimeout(timer.current);
-    flush(doc);
+    flush();
   }
 
   const isExplanation = doc.usage === "explanation";
