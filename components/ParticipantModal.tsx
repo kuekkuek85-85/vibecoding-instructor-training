@@ -24,7 +24,7 @@ const SECTION_LABEL: Record<ModalSection, string> = {
   output: "산출물",
   aiOutput: "AI 산출물 검토",
   questions: "검토관 질문",
-  takeaway: "가져갈 것 하나",
+  takeaway: "연수 후기",
 };
 
 function Block({
@@ -252,7 +252,7 @@ export function ParticipantModal({
             ) : null}
           </Block>
 
-          <Block id="takeaway" active={active} title="가져갈 것 하나" filled={Boolean(p.takeaway)}>
+          <Block id="takeaway" active={active} title="연수 후기" filled={Boolean(p.takeaway)}>
             <p className="t-subhead">{p.takeaway}</p>
           </Block>
         </div>

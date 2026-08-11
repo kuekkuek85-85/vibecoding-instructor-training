@@ -67,8 +67,8 @@ export function AdminDashboard() {
 
       {session.phase === "wrapup" ? (
         <ColorBlock tone="lime">
-          <Eyebrow className="mb-4 opacity-100">Takeaways</Eyebrow>
-          <h2 className="t-display-lg mb-8">내 수업에 가져갈 것 하나</h2>
+          <Eyebrow className="mb-4 opacity-100">Feedback</Eyebrow>
+          <h2 className="t-display-lg mb-8">오늘 연수 후기</h2>
           <ul className="divide-y divide-black/10">
             {participants.map((p) => (
               <li key={p.id} className="py-5">
@@ -317,7 +317,7 @@ function ParticipantCard({
             ["output", "산출물 링크", Boolean(p.canvaLink)],
             ["aiOutput", "AI 산출물 검토", Boolean(p.aiReviewOutput)],
             ["questions", "검토관 질문", Boolean(p.peerQuestions?.length)],
-            ["takeaway", "가져갈 것 하나", Boolean(p.takeaway)],
+            ["takeaway", "연수 후기", Boolean(p.takeaway)],
           ] as [ModalSection, string, boolean][]
         ).map(([key, label, done]) => (
           <li key={key}>

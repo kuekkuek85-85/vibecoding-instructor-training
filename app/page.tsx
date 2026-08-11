@@ -31,6 +31,7 @@ import {
   type Phase,
 } from "@/lib/types";
 import { useMyParticipantId, useSession } from "@/lib/useSession";
+import { WRAPUP_CAUTIONS, WRAPUP_INTENT } from "@/lib/wrapup-notes";
 
 const CANVA_CODE_URL = "https://www.canva.com/code/";
 
@@ -69,7 +70,7 @@ const PHASE_INTRO: Record<Phase, { title: string; lead: string }> = {
   },
   wrapup: {
     title: "오늘을 정리합니다",
-    lead: "내 수업에 가져갈 것 하나만 적어 주세요.",
+    lead: "오늘 흐름을 되짚고, 연수 후기를 남겨 주세요.",
   },
 };
 
@@ -857,12 +858,56 @@ function WrapupStage({ sessionId, me }: { sessionId: string; me: Participant }) 
         </ol>
       </Card>
 
+      {/* 강사가 전하는 의도와 방향성 — 문구는 lib/wrapup-notes.ts 에서 고친다 */}
       <Card>
-        <SectionTitle eyebrow="Takeaway" hint="딱 한 가지만 적어 주세요.">
-          내 수업에 가져갈 것 하나
+        <SectionTitle eyebrow={WRAPUP_INTENT.eyebrow}>
+          {WRAPUP_INTENT.title}
         </SectionTitle>
         <div className="space-y-4">
-          <textarea value={takeaway} onChange={(e) => setTakeaway(e.target.value)} />
+          {WRAPUP_INTENT.paragraphs.map((text, i) => (
+            <p key={i} className="t-body max-w-3xl">
+              {text}
+            </p>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle
+          eyebrow="Cautions"
+          hint="학생들과 산출물을 만들 때 이 다섯 가지만은 지켜 주세요."
+        >
+          지도하실 때 주의할 점
+        </SectionTitle>
+        <ol className="divide-y divide-hairline-soft">
+          {WRAPUP_CAUTIONS.map((c, i) => (
+            <li key={i} className="flex gap-4 py-4">
+              <span className="t-caption pt-1 opacity-40">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <p className="t-card-title">{c.title}</p>
+                <p className="t-body-sm mt-1.5 opacity-75">{c.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Card>
+
+      <Card>
+        <SectionTitle
+          eyebrow="Feedback"
+          hint="좋았던 점, 아쉬웠던 점, 학교에서 해 보고 싶은 것 — 무엇이든 좋습니다."
+        >
+          오늘 연수 후기
+        </SectionTitle>
+        <div className="space-y-4">
+          <textarea
+            className="min-h-32"
+            value={takeaway}
+            onChange={(e) => setTakeaway(e.target.value)}
+            placeholder="예) 검증 기준 칸만 학생이 직접 쓰게 하는 방식이 인상적이었습니다. 다만 제작 시간이 조금 부족했습니다."
+          />
           <Button
             tone={saved ? "ok" : "primary"}
             disabled={!takeaway.trim()}
