@@ -53,16 +53,16 @@ export function AiReviewPanel({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={run} disabled={loading || disabled}>
           {loading ? "검토 중…" : review ? "다시 검토받기" : "AI 검토 받기"}
         </Button>
         {disabled && disabledReason ? (
-          <span className="text-xs text-muted">{disabledReason}</span>
+          <span className="t-body-sm max-w-md opacity-60">{disabledReason}</span>
         ) : null}
         {review ? (
-          <span className="text-xs text-muted">
+          <span className="t-caption opacity-50">
             {new Date(review.createdAt).toLocaleTimeString("ko-KR")} 검토 완료
           </span>
         ) : null}
@@ -83,11 +83,13 @@ export function AiReviewPanel({
       ) : null}
 
       {review ? (
-        <div className="whitespace-pre-wrap rounded-lg border border-accent/30 bg-accent/5 p-4 text-sm">
+        // AI 검토는 이 화면에서 가장 오래 읽히는 글이다. 색을 더하지 않고
+        // surface-soft + 왼쪽 규칙선으로 인용문처럼 구분한다.
+        <div className="t-body whitespace-pre-wrap rounded-md border-l-2 border-ink bg-surface-soft p-6">
           {review.text}
         </div>
       ) : (
-        <p className="text-sm text-muted">아직 AI 검토를 받지 않았습니다.</p>
+        <p className="t-body-sm opacity-50">아직 AI 검토를 받지 않았습니다.</p>
       )}
     </div>
   );

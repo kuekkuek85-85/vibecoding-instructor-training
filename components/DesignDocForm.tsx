@@ -142,7 +142,7 @@ export function DesignDocForm({
     <div className="space-y-4" onBlur={readOnly ? undefined : flushNow}>
       {!readOnly ? (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted">소재 예시 불러오기</span>
+          <span className="t-caption opacity-60">소재 예시</span>
           <select
             className="max-w-xs"
             value={me.seedId ?? ""}
@@ -155,7 +155,7 @@ export function DesignDocForm({
               </option>
             ))}
           </select>
-          <span className={`text-xs ${saved ? "text-ok" : "text-warn"}`}>
+          <span className={`t-caption ${saved ? "opacity-45" : "opacity-100"}`}>
             {saved ? "저장됨" : "저장 중…"}
           </span>
         </div>
@@ -242,7 +242,6 @@ export function DesignDocForm({
           highlight={!readOnly}
         >
           <textarea
-            className="border-warn/60"
             value={doc.verification}
             readOnly={readOnly}
             onChange={(e) => update("verification", e.target.value)}
@@ -292,10 +291,10 @@ export function DesignDocView({ doc }: { doc: DesignDoc }) {
         ];
 
   return (
-    <dl className="divide-y divide-line/60 text-sm">
+    <dl className="divide-y divide-hairline-soft">
       {rows.map(([k, v]) => (
         <div key={k} className="grid grid-cols-[7.5rem_1fr] gap-3 py-2">
-          <dt className="text-muted">{k}</dt>
+          <dt className="t-caption pt-1 opacity-50">{k}</dt>
           <dd className="whitespace-pre-wrap">{v || "—"}</dd>
         </div>
       ))}

@@ -5,7 +5,16 @@ import { AiReviewPanel } from "@/components/AiReviewPanel";
 import { CopyButton, DesignDocForm, DesignDocView } from "@/components/DesignDocForm";
 import { SlideSync } from "@/components/SlideSync";
 import { Stepper } from "@/components/Stepper";
-import { Badge, Button, Card, Field, Notice, SectionTitle } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  ColorBlock,
+  Eyebrow,
+  Field,
+  Notice,
+  SectionTitle,
+} from "@/components/ui";
 import { buildCanvaPrompt } from "@/lib/canva-prompt";
 import { addPeerQuestion, patchParticipant } from "@/lib/db";
 import {
@@ -13,13 +22,47 @@ import {
   findPartner,
   nameWithSubject,
   PHASE_LABEL,
+  PHASE_TONE,
   phaseToStage,
   reviewerRoleFor,
   subjectLabel,
   type DesignDoc,
   type Participant,
+  type Phase,
 } from "@/lib/types";
 import { useMyParticipantId, useSession } from "@/lib/useSession";
+
+/** 각 단계 색상 블록에 실릴 헤드라인과 리드 문장 */
+const PHASE_INTRO: Record<Phase, { title: string; lead: string }> = {
+  waiting: {
+    title: "잠시 기다려 주세요",
+    lead: "강사가 시작하면 이 화면이 자동으로 넘어갑니다.",
+  },
+  design: {
+    title: "연구설계서를 작성합니다",
+    lead: "여섯 칸은 예시로 채워져 있습니다. 직접 쓰실 칸은 검증 기준 하나입니다.",
+  },
+  design_review: {
+    title: "네 번의 검토를 거칩니다",
+    lead: "AI → 자기 → 동료 → 강사. 네 검토를 모두 지나야 제작 단계가 열립니다.",
+  },
+  build: {
+    title: "설계서를 화면으로 만듭니다",
+    lead: "설계서가 그대로 프롬프트가 됩니다. 복사해서 캔바 코드에 붙여넣으세요.",
+  },
+  output_review: {
+    title: "결과를 가설과 대조합니다",
+    lead: "만든 화면이 무엇을 보여 줬는지 적고, 가설·문헌과 맞는지 확인합니다.",
+  },
+  present: {
+    title: "발표하고 질문합니다",
+    lead: "발표자의 설계서를 함께 보며 변인·검증·한계 세 관점에서 질문합니다.",
+  },
+  wrapup: {
+    title: "오늘을 정리합니다",
+    lead: "내 수업에 가져갈 것 하나만 적어 주세요.",
+  },
+};
 
 export default function StudentPage() {
   const { sessionId, session, participants, loading, error } = useSession();
@@ -50,37 +93,45 @@ export default function StudentPage() {
     );
   }
   if (loading) {
-    return <Shell>불러오는 중…</Shell>;
+    return <Shell>{null}</Shell>;
   }
   if (!sessionId || !session) {
     return (
       <Shell>
-        <Notice tone="warn">
-          아직 연수 세션이 열리지 않았습니다. 강사가 세션을 시작하면 자동으로 화면이
-          바뀝니다.
-        </Notice>
+        <ColorBlock tone="cream">
+          <Eyebrow className="mb-4">Waiting</Eyebrow>
+          <h2 className="t-display-lg max-w-xl">아직 세션이 열리지 않았습니다</h2>
+          <p className="t-body-lg mt-5 max-w-lg">
+            강사가 세션을 시작하면 이 화면이 자동으로 바뀝니다.
+          </p>
+        </ColorBlock>
       </Shell>
     );
   }
   if (!ready) {
-    return <Shell>불러오는 중…</Shell>;
+    return <Shell>{null}</Shell>;
   }
 
   if (!me) {
     return (
       <Shell>
-        <SectionTitle hint="자기 이름 카드를 눌러 주세요.">
-          이름을 선택하세요
-        </SectionTitle>
+        <div className="py-4">
+          <Eyebrow className="mb-4">Select your name</Eyebrow>
+          <h2 className="t-display-lg max-w-2xl">이름을 선택하세요</h2>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {participants.map((p) => (
             <button
               key={p.id}
               onClick={() => setMyId(p.id)}
-              className="rounded-xl border border-line bg-surface p-6 text-left transition hover:border-accent hover:bg-surface-2"
+              className="group rounded-lg border border-hairline bg-canvas p-8 text-left transition hover:border-ink"
             >
-              <div className="text-2xl font-bold">{p.name}</div>
-              <div className="mt-1 text-sm text-muted">{subjectLabel(p.subject)}</div>
+              <div className="t-card-title">{p.name}</div>
+              {subjectLabel(p.subject) ? (
+                <div className="t-caption mt-2 opacity-60">
+                  {subjectLabel(p.subject)}
+                </div>
+              ) : null}
             </button>
           ))}
         </div>
@@ -92,18 +143,21 @@ export default function StudentPage() {
   }
 
   const partner = findPartner(me, participants);
+  const intro = PHASE_INTRO[phase];
 
   return (
     <Shell
       header={
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-bold">{me.name}</span>
-            {me.subject !== "미정" ? <Badge tone="accent">{me.subject}</Badge> : null}
-            {me.gateApproved ? <Badge tone="ok">설계 승인 완료</Badge> : null}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="t-card-title">{me.name}</span>
+            {me.subject !== "미정" ? (
+              <Badge tone="accent">{me.subject}</Badge>
+            ) : null}
+            {me.gateApproved ? <Badge tone="ok">설계 승인</Badge> : null}
           </div>
           <button
-            className="text-xs text-muted underline"
+            className="t-caption rounded-pill border border-hairline px-3 py-1.5 transition hover:border-ink"
             onClick={() => setMyId(null)}
           >
             이름 바꾸기
@@ -113,35 +167,35 @@ export default function StudentPage() {
     >
       <Stepper phase={phase} gateApproved={me.gateApproved} />
 
-      {phase === "waiting" ? (
-        <Card>
-          <SectionTitle hint={`현재 단계: ${PHASE_LABEL[phase]}`}>
-            잠시 기다려 주세요
-          </SectionTitle>
-          <SlideSync session={session} />
-        </Card>
-      ) : null}
+      {/* 단계마다 색상 블록 하나 — 이 시스템의 섹션 브레이크 */}
+      <ColorBlock tone={PHASE_TONE[phase]}>
+        <Eyebrow className="mb-4 opacity-100">
+          Stage {String(phaseToStage(phase)).padStart(2, "0")} / 07 —{" "}
+          {PHASE_LABEL[phase]}
+        </Eyebrow>
+        <h2 className="t-display-lg max-w-2xl">{intro.title}</h2>
+        <p className="t-body-lg mt-5 max-w-xl">{intro.lead}</p>
+      </ColorBlock>
+
+      {phase === "waiting" ? <SlideSync session={session} /> : null}
 
       {phase === "design" ? (
         <Card>
-          <SectionTitle hint="6칸은 예시로 채워져 있습니다. ★ 표시된 칸을 직접 작성하세요.">
-            2단계 · 연구설계서 작성
+          <SectionTitle
+            eyebrow="Design doc"
+            hint="소재를 하나 고른 뒤, 검증 기준 칸을 직접 채워 주세요."
+          >
+            연구설계서
           </SectionTitle>
           <DesignDocForm sessionId={sessionId} me={me} />
         </Card>
       ) : null}
 
       {phase === "design_review" ? (
-        <DesignReviewStage
-          sessionId={sessionId}
-          me={me}
-          partner={partner}
-        />
+        <DesignReviewStage sessionId={sessionId} me={me} partner={partner} />
       ) : null}
 
-      {phase === "build" ? (
-        <BuildStage sessionId={sessionId} me={me} />
-      ) : null}
+      {phase === "build" ? <BuildStage sessionId={sessionId} me={me} /> : null}
 
       {phase === "output_review" ? (
         <OutputReviewStage sessionId={sessionId} me={me} />
@@ -156,9 +210,7 @@ export default function StudentPage() {
         />
       ) : null}
 
-      {phase === "wrapup" ? (
-        <WrapupStage sessionId={sessionId} me={me} />
-      ) : null}
+      {phase === "wrapup" ? <WrapupStage sessionId={sessionId} me={me} /> : null}
     </Shell>
   );
 }
@@ -171,10 +223,12 @@ function Shell({
   header?: React.ReactNode;
 }) {
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 space-y-5 p-6">
-      <div>
-        <h1 className="text-xl font-bold">영재원 과학교사 바이브코딩 연수</h1>
-        <p className="text-sm text-muted">설계 → 제작 → 검토 → 발표</p>
+    <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 px-6 py-8">
+      <div className="flex items-baseline justify-between gap-4">
+        <h1 className="t-headline">영재원 과학교사 바이브코딩 연수</h1>
+        <p className="t-caption hidden opacity-50 sm:block">
+          설계 · 제작 · 검토 · 발표
+        </p>
       </div>
       {header}
       {children}
@@ -204,10 +258,13 @@ function DesignReviewStage({
   const alreadyCommented = partner?.peerReviewDesign?.fromId === me.id;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
-        <SectionTitle hint="① AI 검토 — 잘된 점 1개 + 보완점 2개">
-          3단계 · AI 검토
+        <SectionTitle
+          eyebrow="Review 01 — AI"
+          hint="잘된 점 1개와 보완점 2개를 받습니다."
+        >
+          AI 검토
         </SectionTitle>
         <AiReviewPanel
           sessionId={sessionId}
@@ -220,24 +277,27 @@ function DesignReviewStage({
             dirty
               ? "설계서를 저장하는 중입니다. 입력칸 밖을 한 번 클릭해 주세요."
               : !designDocReady(me.designDoc)
-                ? "설계서의 빈 칸을 먼저 채워 주세요. 특히 ★ 검증 기준 칸이 비어 있으면 의미 있는 검토를 받을 수 없습니다."
+                ? "설계서의 빈 칸을 먼저 채워 주세요. 특히 검증 기준 칸이 비어 있으면 의미 있는 검토를 받을 수 없습니다."
                 : undefined
           }
         />
       </Card>
 
       <Card>
-        <SectionTitle hint="② 자기 검토 — AI 지적을 반영해 최소 1칸을 고치고, 무엇을 왜 고쳤는지 적으세요.">
+        <SectionTitle
+          eyebrow="Review 02 — Self"
+          hint="AI 지적을 반영해 최소 한 칸을 고치고, 무엇을 왜 고쳤는지 적으세요."
+        >
           자기 검토
         </SectionTitle>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <DesignDocForm
             sessionId={sessionId}
             me={me}
             onFieldChange={(f) => setChangedField(f)}
             onDirtyChange={setDirty}
           />
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             <Field label="고친 칸">
               <select
                 value={changedField}
@@ -285,18 +345,19 @@ function DesignReviewStage({
 
       <Card>
         <SectionTitle
+          eyebrow="Review 03 — Peer"
           hint={
             partner
-              ? `③ 동료 검토 — ${partner.name} 선생님의 설계서에 코멘트 1개를 남겨 주세요.`
+              ? `${partner.name} 선생님의 설계서에 코멘트 1개를 남겨 주세요.`
               : "짝을 찾을 수 없습니다."
           }
         >
           동료 검토
         </SectionTitle>
         {partner ? (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-line bg-surface-2 p-4">
-              <div className="mb-2 font-medium">
+          <div className="space-y-5">
+            <div className="rounded-md bg-surface-soft p-5">
+              <div className="t-caption mb-3 opacity-60">
                 {nameWithSubject(partner.name, partner.subject)}
               </div>
               <DesignDocView doc={partner.designDoc} />
@@ -335,17 +396,20 @@ function DesignReviewStage({
       </Card>
 
       <Card>
-        <SectionTitle hint="④ 강사 승인 — 세 가지 검토가 끝나면 강사가 승인합니다.">
-          내가 받은 동료 코멘트 · 강사 승인
+        <SectionTitle
+          eyebrow="Review 04 — Instructor"
+          hint="세 검토가 끝나면 강사가 승인합니다."
+        >
+          받은 코멘트 · 강사 승인
         </SectionTitle>
         {me.peerReviewDesign ? (
           <Notice tone="muted">
-            <b>{me.peerReviewDesign.fromName}</b>: {me.peerReviewDesign.comment}
+            <b>{me.peerReviewDesign.fromName}</b> — {me.peerReviewDesign.comment}
           </Notice>
         ) : (
-          <p className="text-sm text-muted">아직 동료 코멘트가 없습니다.</p>
+          <p className="t-body-sm opacity-60">아직 동료 코멘트가 없습니다.</p>
         )}
-        <div className="mt-4">
+        <div className="mt-5">
           {me.gateApproved ? (
             <Notice tone="ok">강사 승인 완료 — 제작 단계로 넘어갈 수 있습니다.</Notice>
           ) : (
@@ -369,7 +433,7 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
   if (!me.gateApproved) {
     return (
       <Card>
-        <SectionTitle>4단계 · 제작</SectionTitle>
+        <SectionTitle eyebrow="Gate locked">제작 단계가 잠겨 있습니다</SectionTitle>
         <Notice tone="warn">
           🔒 아직 강사 승인을 받지 않았습니다. 설계 검토를 마치고 강사에게 승인을 요청해
           주세요.
@@ -379,12 +443,15 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
-        <SectionTitle hint="설계서를 그대로 조립한 프롬프트입니다. 복사해서 캔바 코드에 붙여넣으세요.">
-          4단계 · 캔바 코드 프롬프트
+        <SectionTitle
+          eyebrow="Prompt"
+          hint="설계서를 그대로 조립한 프롬프트입니다. 복사해서 캔바 코드에 붙여넣으세요."
+        >
+          캔바 코드 프롬프트
         </SectionTitle>
-        <pre className="mb-3 overflow-x-auto whitespace-pre-wrap rounded-lg border border-line bg-surface-2 p-4 text-sm">
+        <pre className="t-body-sm mb-5 overflow-x-auto whitespace-pre-wrap rounded-md bg-surface-soft p-5">
           {prompt}
         </pre>
         <div className="flex flex-wrap gap-3">
@@ -393,7 +460,7 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
             href="https://www.canva.com/code/"
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-line bg-surface-2 px-4 py-2 text-sm hover:brightness-125"
+            className="t-body-sm inline-flex min-h-11 items-center rounded-pill border border-hairline px-5 py-2.5 font-medium transition hover:border-ink"
           >
             캔바 코드 열기 ↗
           </a>
@@ -401,7 +468,7 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
       </Card>
 
       <Card>
-        <SectionTitle hint="만든 화면의 공유 링크를 붙여넣으세요.">
+        <SectionTitle eyebrow="Submit" hint="만든 화면의 공유 링크를 붙여넣으세요.">
           결과물 링크 제출
         </SectionTitle>
         <div className="flex flex-wrap items-end gap-3">
@@ -428,10 +495,10 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
           </Button>
         </div>
         {me.canvaLink ? (
-          <p className="mt-3 text-sm text-muted">
-            제출된 링크:{" "}
+          <p className="t-body-sm mt-4">
+            <span className="opacity-60">제출된 링크 — </span>
             <a
-              className="text-accent underline"
+              className="underline underline-offset-4"
               href={me.canvaLink}
               target="_blank"
               rel="noreferrer"
@@ -462,12 +529,15 @@ function OutputReviewStage({
   const [savedLimit, setSavedLimit] = useState(false);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
-        <SectionTitle hint="슬라이더를 움직였을 때 그래프가 어떻게 변했는지 2~3문장으로 적으세요.">
-          5단계 · 시뮬레이션 결과 요약
+        <SectionTitle
+          eyebrow="Result"
+          hint="슬라이더를 움직였을 때 그래프가 어떻게 변했는지 2~3문장으로 적으세요."
+        >
+          시뮬레이션 결과 요약
         </SectionTitle>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
@@ -490,7 +560,9 @@ function OutputReviewStage({
       </Card>
 
       <Card>
-        <SectionTitle hint="결과 vs 가설·문헌 대조">AI 산출물 검토</SectionTitle>
+        <SectionTitle eyebrow="AI review" hint="결과 vs 가설·문헌 대조">
+          AI 산출물 검토
+        </SectionTitle>
         <AiReviewPanel
           sessionId={sessionId}
           participantId={me.id}
@@ -508,10 +580,13 @@ function OutputReviewStage({
       </Card>
 
       <Card>
-        <SectionTitle hint="AI가 짚어 준 것 중 하나를 골라 한 줄로 추가하세요.">
-          자기 검토 · 한계 1줄 추가
+        <SectionTitle
+          eyebrow="Self review"
+          hint="AI가 짚어 준 것 중 하나를 골라 한 줄로 추가하세요."
+        >
+          한계 1줄 추가
         </SectionTitle>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <textarea
             value={limitation}
             onChange={(e) => setLimitation(e.target.value)}
@@ -534,7 +609,7 @@ function OutputReviewStage({
           >
             {savedLimit ? "추가됨 ✓" : "한계에 추가"}
           </Button>
-          <p className="text-sm text-muted">
+          <p className="t-body-sm opacity-60">
             현재 한계: {me.designDoc.limitations || "—"}
           </p>
         </div>
@@ -567,25 +642,26 @@ function PresentStage({
   if (!presenter) {
     return (
       <Card>
-        <SectionTitle>6단계 · 발표회</SectionTitle>
+        <SectionTitle eyebrow="Presentation">발표자를 기다리는 중</SectionTitle>
         <Notice tone="warn">강사가 발표자를 지정하면 화면이 바뀝니다.</Notice>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <h2 className="text-lg font-bold">
-            발표자 · {nameWithSubject(presenter.name, presenter.subject)}
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <Eyebrow>Presenter</Eyebrow>
+          <h2 className="t-card-title">
+            {nameWithSubject(presenter.name, presenter.subject)}
           </h2>
           {isPresenter ? <Badge tone="ok">발표 중</Badge> : null}
-          {role ? <Badge tone="warn">내 역할: {role} 검토관</Badge> : null}
+          {role ? <Badge tone="warn">{role} 검토관</Badge> : null}
         </div>
         {presenter.canvaLink ? (
           <a
-            className="text-accent underline"
+            className="t-body-sm underline underline-offset-4"
             href={presenter.canvaLink}
             target="_blank"
             rel="noreferrer"
@@ -593,22 +669,25 @@ function PresentStage({
             {presenter.canvaLink} ↗
           </a>
         ) : (
-          <p className="text-sm text-muted">제출된 링크가 없습니다.</p>
+          <p className="t-body-sm opacity-60">제출된 링크가 없습니다.</p>
         )}
-        <div className="mt-4 rounded-lg border border-line bg-surface-2 p-4">
+        <div className="mt-5 rounded-md bg-surface-soft p-5">
           <DesignDocView doc={presenter.designDoc} />
         </div>
       </Card>
 
       {!isPresenter && role ? (
         <Card>
-          <SectionTitle hint={`「${role}」 관점에서 질문 1개를 남겨 주세요.`}>
+          <SectionTitle
+            eyebrow={`Reviewer — ${role}`}
+            hint={`「${role}」 관점에서 질문 1개를 남겨 주세요.`}
+          >
             검토관 질문
           </SectionTitle>
           {alreadyAsked ? (
             <Notice tone="ok">질문을 남겼습니다.</Notice>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
@@ -633,22 +712,24 @@ function PresentStage({
       ) : null}
 
       <Card>
-        <SectionTitle>지금까지의 질문</SectionTitle>
+        <SectionTitle eyebrow="Questions">지금까지의 질문</SectionTitle>
         {presenter.peerQuestions?.length ? (
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-3">
             {presenter.peerQuestions.map((q, i) => (
-              <li key={i} className="rounded-lg border border-line bg-surface-2 p-3">
-                <Badge tone="warn">{q.role}</Badge>{" "}
-                <span className="text-muted">{q.fromName}</span>
-                <div className="mt-1">{q.question}</div>
+              <li key={i} className="rounded-md bg-surface-soft p-5">
+                <div className="mb-2 flex items-center gap-2">
+                  <Badge tone="warn">{q.role}</Badge>
+                  <span className="t-caption opacity-60">{q.fromName}</span>
+                </div>
+                <p className="t-body-sm">{q.question}</p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted">아직 질문이 없습니다.</p>
+          <p className="t-body-sm opacity-60">아직 질문이 없습니다.</p>
         )}
         {presenter.instructorComment ? (
-          <div className="mt-4">
+          <div className="mt-5">
             <Notice tone="ok">
               <b>강사 코멘트</b> — {presenter.instructorComment}
             </Notice>
@@ -665,24 +746,35 @@ function WrapupStage({ sessionId, me }: { sessionId: string; me: Participant }) 
   const [takeaway, setTakeaway] = useState(me.takeaway);
   const [saved, setSaved] = useState(false);
 
+  const flow = [
+    "설계서 7칸 중 검증 기준을 직접 썼습니다.",
+    "AI → 자기 → 동료 → 강사, 네 번의 검토를 거쳐 설계를 다듬었습니다.",
+    "설계서를 그대로 프롬프트로 바꿔 화면을 만들었습니다.",
+    "결과를 가설·문헌과 대조하고 한계를 한 줄 더 붙였습니다.",
+    "발표에서 변인·검증·한계 세 관점의 질문을 주고받았습니다.",
+  ];
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
-        <SectionTitle>오늘의 흐름</SectionTitle>
-        <ol className="list-decimal space-y-1 pl-5 text-sm">
-          <li>설계서 7칸 중 <b>검증 기준</b>을 직접 썼습니다.</li>
-          <li>AI → 자기 → 동료 → 강사, 네 번의 검토를 거쳐 설계를 다듬었습니다.</li>
-          <li>설계서를 그대로 프롬프트로 바꿔 화면을 만들었습니다.</li>
-          <li>결과를 가설·문헌과 대조하고 한계를 한 줄 더 붙였습니다.</li>
-          <li>발표에서 변인·검증·한계 세 관점의 질문을 주고받았습니다.</li>
+        <SectionTitle eyebrow="Recap">오늘의 흐름</SectionTitle>
+        <ol className="divide-y divide-hairline-soft">
+          {flow.map((line, i) => (
+            <li key={i} className="flex gap-4 py-3">
+              <span className="t-caption pt-1 opacity-40">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="t-body-sm">{line}</span>
+            </li>
+          ))}
         </ol>
       </Card>
 
       <Card>
-        <SectionTitle hint="딱 한 가지만 적어 주세요.">
+        <SectionTitle eyebrow="Takeaway" hint="딱 한 가지만 적어 주세요.">
           내 수업에 가져갈 것 하나
         </SectionTitle>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <textarea value={takeaway} onChange={(e) => setTakeaway(e.target.value)} />
           <Button
             tone={saved ? "ok" : "primary"}

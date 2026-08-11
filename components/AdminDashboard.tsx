@@ -15,7 +15,7 @@ import {
   type Subject,
 } from "@/lib/types";
 import { useSession } from "@/lib/useSession";
-import { Badge, Button, Card, Field, Notice, SectionTitle } from "./ui";
+import { Badge, Button, Card, ColorBlock, Eyebrow, Field, Notice, SectionTitle } from "./ui";
 
 export function AdminDashboard() {
   const { sessionId, session, participants, loading, error } = useSession();
@@ -62,21 +62,20 @@ export function AdminDashboard() {
       </div>
 
       {session.phase === "wrapup" ? (
-        <Card>
-          <SectionTitle hint="마무리 낭독용">
-            내 수업에 가져갈 것 하나
-          </SectionTitle>
-          <ul className="space-y-3">
+        <ColorBlock tone="lime">
+          <Eyebrow className="mb-4 opacity-100">Takeaways</Eyebrow>
+          <h2 className="t-display-lg mb-8">내 수업에 가져갈 것 하나</h2>
+          <ul className="divide-y divide-black/10">
             {participants.map((p) => (
-              <li key={p.id} className="rounded-lg border border-line bg-surface-2 p-4">
-                <div className="mb-1 text-sm text-muted">
+              <li key={p.id} className="py-5">
+                <div className="t-caption mb-2 opacity-60">
                   {nameWithSubject(p.name, p.subject)}
                 </div>
-                <div className="text-lg">{p.takeaway || "—"}</div>
+                <p className="t-subhead">{p.takeaway || "—"}</p>
               </li>
             ))}
           </ul>
-        </Card>
+        </ColorBlock>
       ) : null}
     </Wrap>
   );
@@ -84,8 +83,11 @@ export function AdminDashboard() {
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 space-y-5 p-6">
-      <h1 className="text-xl font-bold">강사 대시보드</h1>
+    <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-6 py-8">
+      <div className="border-b border-hairline pb-5">
+        <p className="t-caption mb-2 opacity-50">Instructor</p>
+        <h1 className="t-display-lg">강사 대시보드</h1>
+      </div>
       {children}
     </main>
   );
@@ -215,7 +217,7 @@ function SessionBar({
     <Card>
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted">단계 전환</span>
+          <span className="t-caption w-full opacity-50">Phase</span>
           {PHASES.map((p) => (
             <Button
               key={p}
@@ -228,7 +230,7 @@ function SessionBar({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted">발표자</span>
+          <span className="t-caption opacity-50">Presenter</span>
           <select
             className="max-w-56"
             value={session.presenterId ?? ""}
@@ -244,7 +246,7 @@ function SessionBar({
             ))}
           </select>
 
-          <span className="ml-4 text-sm text-muted">슬라이드</span>
+          <span className="t-caption ml-4 opacity-50">Slides</span>
           <Button
             tone="ghost"
             disabled={slideCount === 0 || session.currentSlide <= 0}
@@ -256,7 +258,7 @@ function SessionBar({
           >
             ‹ 이전
           </Button>
-          <span className="tabular-nums text-sm">
+          <span className="t-caption tabular-nums">
             {slideCount === 0 ? "없음" : `${session.currentSlide + 1} / ${slideCount}`}
           </span>
           <Button
@@ -300,10 +302,9 @@ function SessionBar({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-sm text-muted">
-          <span>
-            세션 ID <code className="text-foreground">{sessionId}</code> · 수강생은
-            이 사이트 루트 주소로 접속
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
+          <span className="t-caption opacity-50">
+            Session {sessionId} · 수강생은 이 사이트 루트 주소로 접속
           </span>
           <Button tone="ghost" onClick={onNewSession}>
             새 세션 만들기
@@ -329,35 +330,35 @@ function ParticipantCard({
   const ready = designReviewComplete(p);
 
   return (
-    <Card className={isPresenter ? "border-ok" : ""}>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-lg font-bold">{p.name}</span>
+    <Card className={isPresenter ? "border-ink" : ""}>
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <span className="t-card-title">{p.name}</span>
         {p.subject !== "미정" ? <Badge tone="accent">{p.subject}</Badge> : null}
-        <Badge>{p.stage}단계</Badge>
+        <Badge>{String(p.stage).padStart(2, "0")} 단계</Badge>
         {p.gateApproved ? <Badge tone="ok">승인됨</Badge> : <Badge tone="warn">🔒 미승인</Badge>}
         {isPresenter ? <Badge tone="ok">발표 중</Badge> : null}
       </div>
 
-      <ul className="mb-3 space-y-1 text-sm">
+      <ul className="mb-5 divide-y divide-hairline-soft">
         <li>
-          <span className="text-muted">AI 설계 검토</span>{" "}
+          <span className="t-caption opacity-50">AI 설계 검토</span>{" "}
           {p.aiReviewDesign ? "✅" : "—"}
         </li>
         <li>
-          <span className="text-muted">자기 검토</span>{" "}
+          <span className="t-caption opacity-50">자기 검토</span>{" "}
           {p.selfReviewDesign
             ? `✅ (${p.selfReviewDesign.changedField})`
             : "—"}
         </li>
         <li>
-          <span className="text-muted">동료 검토</span>{" "}
+          <span className="t-caption opacity-50">동료 검토</span>{" "}
           {p.peerReviewDesign ? `✅ ${p.peerReviewDesign.fromName}` : "—"}
         </li>
         <li>
-          <span className="text-muted">캔바 링크</span>{" "}
+          <span className="t-caption opacity-50">캔바 링크</span>{" "}
           {p.canvaLink ? (
             <a
-              className="text-accent underline"
+              className="underline underline-offset-4"
               href={p.canvaLink}
               target="_blank"
               rel="noreferrer"
@@ -369,24 +370,24 @@ function ParticipantCard({
           )}
         </li>
         <li>
-          <span className="text-muted">AI 산출물 검토</span>{" "}
+          <span className="t-caption opacity-50">AI 산출물 검토</span>{" "}
           {p.aiReviewOutput ? "✅" : "—"}
         </li>
       </ul>
 
       {p.aiReviewDesign ? (
-        <details className="mb-3 rounded-lg border border-line bg-surface-2 p-3 text-sm">
-          <summary className="cursor-pointer text-muted">AI 설계 검토 내용</summary>
-          <p className="mt-2 whitespace-pre-wrap">{p.aiReviewDesign.text}</p>
+        <details className="mb-4 rounded-md bg-surface-soft p-4">
+          <summary className="t-caption cursor-pointer opacity-60">AI 설계 검토 내용</summary>
+          <p className="t-body-sm mt-3 whitespace-pre-wrap">{p.aiReviewDesign.text}</p>
         </details>
       ) : null}
 
       {p.peerQuestions?.length ? (
-        <details className="mb-3 rounded-lg border border-line bg-surface-2 p-3 text-sm">
-          <summary className="cursor-pointer text-muted">
+        <details className="mb-4 rounded-md bg-surface-soft p-4">
+          <summary className="t-caption cursor-pointer opacity-60">
             검토관 질문 {p.peerQuestions.length}개
           </summary>
-          <ul className="mt-2 space-y-1">
+          <ul className="t-body-sm mt-3 space-y-2">
             {p.peerQuestions.map((q, i) => (
               <li key={i}>
                 <b>[{q.role}]</b> {q.fromName}: {q.question}
@@ -398,7 +399,7 @@ function ParticipantCard({
 
       <div className="flex flex-wrap gap-2">
         <Button
-          tone={p.gateApproved ? "ghost" : "ok"}
+          tone={p.gateApproved ? "ghost" : "primary"}
           disabled={!p.gateApproved && !ready}
           title={
             !ready && !p.gateApproved
@@ -413,7 +414,7 @@ function ParticipantCard({
         </Button>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-end gap-2">
+      <div className="mt-5 flex flex-wrap items-end gap-3">
         <div className="min-w-48 flex-1">
           <Field label="강사 코멘트">
             <input

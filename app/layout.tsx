@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
-import { Noto_Sans_KR } from "next/font/google";
+import { Inter, JetBrains_Mono, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
-const notoSansKr = Noto_Sans_KR({
-  variable: "--font-sans-kr",
+/**
+ * DESIGN-figma.md 의 폰트 대체안:
+ * figmaSans → Inter (가변 weight 축이 320~700 미세 증분을 그대로 받아 준다)
+ * figmaMono → JetBrains Mono
+ * Inter 에는 한글 글리프가 없으므로 Noto Sans KR 을 뒤에 두어 글리프 단위로 넘긴다.
+ */
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const notoKr = Noto_Sans_KR({
+  variable: "--font-noto-kr",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
   display: "swap",
 });
 
@@ -16,7 +34,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${notoSansKr.variable} h-full antialiased`}>
+    <html
+      lang="ko"
+      className={`${inter.variable} ${jetbrains.variable} ${notoKr.variable} h-full`}
+    >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

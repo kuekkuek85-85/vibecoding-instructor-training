@@ -1,72 +1,244 @@
 @import "tailwindcss";
 
+/* =========================================================================
+   Figma 디자인 시스템 토큰 (DESIGN-figma.md)
+   흑백 에디토리얼 프레임 + 오버사이즈 파스텔 색상 블록.
+   ========================================================================= */
+
 :root {
-  --background: #0e1420;
-  --surface: #17202f;
-  --surface-2: #1e293b;
-  --border: #2c3a4f;
-  --foreground: #e8edf5;
-  --muted: #9aabc2;
-  --accent: #5eb0ff;
-  --accent-strong: #2f80ed;
-  --ok: #43c59e;
-  --warn: #f5b544;
-  --danger: #f2705f;
+  /* --- colors --- */
+  --primary: #000000;
+  --on-primary: #ffffff;
+  --ink: #000000;
+  --canvas: #ffffff;
+  --inverse-canvas: #000000;
+  --inverse-ink: #ffffff;
+  --hairline: #e6e6e6;
+  --hairline-soft: #f1f1f1;
+  --surface-soft: #f7f7f5;
+
+  --block-lime: #dceeb1;
+  --block-lilac: #c5b0f4;
+  --block-cream: #f4ecd6;
+  --block-pink: #efd4d4;
+  --block-mint: #c8e6cd;
+  --block-coral: #f3c9b6;
+  --block-navy: #1f1d3d;
+
+  --accent-magenta: #ff3d8b;
+  --semantic-success: #1ea64a;
+
+  /* --- radius --- */
+  --r-xs: 2px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 50px;
+  --r-full: 9999px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-line: var(--border);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-ok: var(--ok);
-  --color-warn: var(--warn);
-  --color-danger: var(--danger);
-  --font-sans: var(--font-sans-kr);
+  --color-ink: var(--ink);
+  --color-canvas: var(--canvas);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-inverse-canvas: var(--inverse-canvas);
+  --color-inverse-ink: var(--inverse-ink);
+  --color-hairline: var(--hairline);
+  --color-hairline-soft: var(--hairline-soft);
+  --color-surface-soft: var(--surface-soft);
+
+  --color-lime: var(--block-lime);
+  --color-lilac: var(--block-lilac);
+  --color-cream: var(--block-cream);
+  --color-pink: var(--block-pink);
+  --color-mint: var(--block-mint);
+  --color-coral: var(--block-coral);
+  --color-navy: var(--block-navy);
+
+  --color-magenta: var(--accent-magenta);
+  --color-success: var(--semantic-success);
+
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-pill: var(--r-pill);
+
+  --font-sans: var(--font-inter), var(--font-noto-kr), Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), var(--font-noto-kr), "Malgun Gothic", ui-monospace, monospace;
+}
+
+/* =========================================================================
+   Base
+   ========================================================================= */
+
+html {
+  background: var(--canvas);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans-kr), "Malgun Gothic", system-ui, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-inter), var(--font-noto-kr), Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-feature-settings: "kern";
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 강의 화면 가독성: 폼 요소는 크고 대비 높게 */
+/* =========================================================================
+   Typography roles — DESIGN-figma.md 의 typography 토큰과 1:1 대응.
+   display 계열은 문서의 responsive 규칙(560px에서 86px→48px)에 맞춰 clamp.
+   ========================================================================= */
+
+.t-display-xl {
+  font-size: clamp(2.75rem, 7vw, 5.375rem); /* 44 → 86px */
+  font-weight: 340;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.t-display-lg {
+  font-size: clamp(2.25rem, 5.5vw, 4rem); /* 36 → 64px */
+  font-weight: 340;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.t-headline {
+  font-size: 1.625rem; /* 26px */
+  font-weight: 540;
+  line-height: 1.35;
+  letter-spacing: -0.26px;
+}
+
+.t-subhead {
+  font-size: 1.625rem; /* 26px */
+  font-weight: 340;
+  line-height: 1.35;
+  letter-spacing: -0.26px;
+}
+
+.t-card-title {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.t-body-lg {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 330;
+  line-height: 1.4;
+  letter-spacing: -0.14px;
+}
+
+.t-body {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 320;
+  line-height: 1.45;
+  letter-spacing: -0.26px;
+}
+
+.t-body-sm {
+  font-size: 1rem; /* 16px */
+  font-weight: 330;
+  line-height: 1.45;
+  letter-spacing: -0.14px;
+}
+
+.t-link,
+.t-button {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 480;
+  line-height: 1.4;
+  letter-spacing: -0.1px;
+}
+
+/* figmaMono 역할 — 분류 라벨 전용. 절대 본문에 쓰지 않는다. */
+.t-eyebrow {
+  font-family: var(--font-jetbrains), var(--font-noto-kr), "Malgun Gothic", ui-monospace, monospace;
+  font-size: 1.125rem; /* 18px */
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0.54px;
+  text-transform: uppercase;
+}
+
+.t-caption {
+  font-family: var(--font-jetbrains), var(--font-noto-kr), "Malgun Gothic", ui-monospace, monospace;
+  font-size: 0.75rem; /* 12px */
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+/* =========================================================================
+   Forms — text-input 토큰: 흰 배경, hairline 테두리, r-md, 12/14 패딩.
+   포커스는 채움색이 아니라 링으로 알린다.
+   ========================================================================= */
+
 input[type="text"],
 input[type="url"],
 textarea,
 select {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  color: var(--foreground);
-  padding: 0.6rem 0.75rem;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  padding: 12px 14px;
   width: 100%;
+  font-size: 1.125rem;
+  font-weight: 320;
+  line-height: 1.45;
+  letter-spacing: -0.26px;
+  min-height: 48px; /* 문서의 폼 최소 탭 타깃 */
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%23000' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.12);
 }
 
 textarea {
   resize: vertical;
-  min-height: 4.5rem;
+  min-height: 5rem;
 }
 
 ::placeholder {
-  color: #6d7f96;
+  color: #9a9a97;
+}
+
+/* 색상 블록 위에 놓인 입력칸은 흰 캔버스를 유지하되 테두리를 죽인다 */
+.on-block input,
+.on-block textarea,
+.on-block select {
+  border-color: transparent;
 }
 
 button:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
+}
+
+:where(button, a):focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* 네이비 블록 등 반전 표면 위에서는 링도 반전 */
+.on-inverse :where(button, a):focus-visible {
+  outline-color: var(--inverse-ink);
 }

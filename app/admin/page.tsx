@@ -2,6 +2,18 @@ import { AdminDashboard } from "@/components/AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
+function Gate({ tone, children }: { tone: "coral" | "cream"; children: React.ReactNode }) {
+  return (
+    <main className="mx-auto w-full max-w-3xl px-6 py-16">
+      <p className="t-caption mb-4 opacity-50">Instructor</p>
+      <h1 className="t-display-lg mb-8">강사 대시보드</h1>
+      <div className={`rounded-lg p-8 ${tone === "coral" ? "bg-coral" : "bg-cream"}`}>
+        <p className="t-body">{children}</p>
+      </div>
+    </main>
+  );
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
@@ -14,24 +26,18 @@ export default async function AdminPage({
 
   if (!expected) {
     return (
-      <main className="mx-auto max-w-xl p-8">
-        <h1 className="mb-3 text-xl font-bold">강사 대시보드</h1>
-        <p className="rounded-lg border border-danger/40 bg-danger/10 p-4 text-sm text-danger">
-          <b>ADMIN_KEY</b>가 서버에 설정되어 있지 않습니다. <code>.env.local</code>에
-          <code> ADMIN_KEY=...</code>를 추가하고 서버를 다시 시작해 주세요.
-        </p>
-      </main>
+      <Gate tone="coral">
+        <b>ADMIN_KEY</b>가 서버에 설정되어 있지 않습니다. <code>.env.local</code>에{" "}
+        <code>ADMIN_KEY=...</code>를 추가하고 서버를 다시 시작해 주세요.
+      </Gate>
     );
   }
 
   if (provided !== expected) {
     return (
-      <main className="mx-auto max-w-xl p-8">
-        <h1 className="mb-3 text-xl font-bold">강사 대시보드</h1>
-        <p className="rounded-lg border border-warn/40 bg-warn/10 p-4 text-sm text-warn">
-          접근 키가 필요합니다. 주소 뒤에 <code>?key=...</code>를 붙여 접속해 주세요.
-        </p>
-      </main>
+      <Gate tone="cream">
+        접근 키가 필요합니다. 주소 뒤에 <code>?key=...</code>를 붙여 접속해 주세요.
+      </Gate>
     );
   }
 

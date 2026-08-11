@@ -32,6 +32,24 @@ export const PHASES: Phase[] = [
   "wrapup",
 ];
 
+/**
+ * 단계마다 색상 블록 하나를 배정한다.
+ * 수강생 화면은 한 번에 한 단계만 보여 주므로 "한 뷰포트에 색상 블록 하나"
+ * 규칙이 자연스럽게 지켜지고, 단계 전환이 곧 색이 바뀌는 섹션 브레이크가 된다.
+ */
+export const PHASE_TONE: Record<
+  Phase,
+  "lime" | "lilac" | "cream" | "mint" | "pink" | "coral" | "navy"
+> = {
+  waiting: "cream",
+  design: "lime",
+  design_review: "lilac",
+  build: "mint",
+  output_review: "coral",
+  present: "navy",
+  wrapup: "pink",
+};
+
 export const PHASE_LABEL: Record<Phase, string> = {
   waiting: "대기",
   design: "설계",
