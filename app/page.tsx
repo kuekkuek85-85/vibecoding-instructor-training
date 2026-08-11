@@ -509,9 +509,12 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
         >
           캔바 코드 프롬프트
         </SectionTitle>
-        {/* 자동 생성이 출발점일 뿐이라, 붙여넣기 전에 직접 손볼 수 있어야 한다 */}
+        {/* 자동 생성이 출발점일 뿐이라, 붙여넣기 전에 직접 손볼 수 있어야 한다.
+            globals.css 의 textarea{min-height} 가 레이어 밖이라 Tailwind 의 min-h-* 를
+            이긴다. 그래서 높이는 rows 로 정하고, 내용이 늘면 같이 늘어나게 한다. */}
         <textarea
-          className="t-body-sm mb-3 min-h-56 font-mono"
+          className="t-body-sm mb-3 font-mono"
+          rows={Math.min(30, Math.max(14, prompt.split("\n").length + 1))}
           value={prompt}
           onChange={(e) => editPrompt(e.target.value)}
           onBlur={() => {
