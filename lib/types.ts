@@ -142,6 +142,8 @@ export interface Participant {
   selfReviewDesign: SelfReviewDesign | null;
   peerReviewDesign: PeerReviewDesign | null;
   canvaLink: string;
+  /** 자동 생성된 프롬프트를 수강생이 손본 최종본. 비어 있으면 설계서에서 즉석 생성해 쓴다 */
+  canvaPrompt: string;
   outputSummary: string;
   aiReviewOutput: AiReview | null;
   selfReviewOutput: { limitationAdded: string } | null;

@@ -183,7 +183,7 @@ export function ParticipantModal({
             id="output"
             active={active}
             title="산출물"
-            filled={Boolean(p.canvaLink || p.outputSummary)}
+            filled={Boolean(p.canvaLink || p.outputSummary || p.canvaPrompt)}
           >
             {p.canvaLink ? (
               <a
@@ -197,6 +197,16 @@ export function ParticipantModal({
             ) : null}
             {p.outputSummary ? (
               <p className="t-body-sm mt-3 whitespace-pre-wrap">{p.outputSummary}</p>
+            ) : null}
+            {p.canvaPrompt ? (
+              <details className="mt-4">
+                <summary className="t-caption cursor-pointer opacity-60">
+                  사용한 프롬프트
+                </summary>
+                <pre className="t-body-sm mt-3 overflow-x-auto whitespace-pre-wrap rounded-md bg-surface-soft p-4">
+                  {p.canvaPrompt}
+                </pre>
+              </details>
             ) : null}
           </Block>
 

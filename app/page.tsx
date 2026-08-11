@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AiReviewPanel } from "@/components/AiReviewPanel";
 import { CopyButton, DesignDocForm, DesignDocView } from "@/components/DesignDocForm";
 import { QuoteRoll } from "@/components/QuoteRoll";
@@ -443,7 +443,46 @@ function DesignReviewStage({
 function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
   const [link, setLink] = useState(me.canvaLink);
   const [saved, setSaved] = useState(false);
-  const prompt = buildCanvaPrompt(me.designDoc);
+
+  // 설계서에서 즉석 생성한 기본 프롬프트. 손본 적이 없으면 이걸 그대로 쓴다.
+  const generated = buildCanvaPrompt(me.designDoc);
+  const [prompt, setPrompt] = useState(me.canvaPrompt || generated);
+  const [promptSaved, setPromptSaved] = useState(true);
+  /** 저장 대기 중인 편집이 있으면 원격 스냅샷으로 덮지 않는다 */
+  const promptDirty = useRef(false);
+  const promptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (promptDirty.current) return;
+    setPrompt(me.canvaPrompt || generated);
+  }, [me.canvaPrompt, generated, promptSaved]);
+
+  useEffect(() => {
+    return () => {
+      if (promptTimer.current) clearTimeout(promptTimer.current);
+    };
+  }, []);
+
+  function savePrompt(text: string) {
+    if (promptTimer.current) clearTimeout(promptTimer.current);
+    patchParticipant(sessionId, me.id, { canvaPrompt: text })
+      .then(() => {
+        promptDirty.current = false;
+        setPromptSaved(true);
+      })
+      .catch(() => setPromptSaved(false));
+  }
+
+  function editPrompt(text: string) {
+    setPrompt(text);
+    promptDirty.current = true;
+    setPromptSaved(false);
+    if (promptTimer.current) clearTimeout(promptTimer.current);
+    promptTimer.current = setTimeout(() => savePrompt(text), 700);
+  }
+
+  // 설계서를 고친 뒤에도 예전 프롬프트가 남아 있으면 알려 준다.
+  const outOfDate = Boolean(me.canvaPrompt) && me.canvaPrompt !== generated;
 
   if (!me.gateApproved) {
     return (
@@ -466,9 +505,37 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
         >
           캔바 코드 프롬프트
         </SectionTitle>
-        <pre className="t-body-sm mb-5 overflow-x-auto whitespace-pre-wrap rounded-md bg-surface-soft p-5">
-          {prompt}
-        </pre>
+        {/* 자동 생성이 출발점일 뿐이라, 붙여넣기 전에 직접 손볼 수 있어야 한다 */}
+        <textarea
+          className="t-body-sm mb-3 min-h-56 font-mono"
+          value={prompt}
+          onChange={(e) => editPrompt(e.target.value)}
+          onBlur={() => {
+            if (promptDirty.current) savePrompt(prompt);
+          }}
+          spellCheck={false}
+        />
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <span className={`t-caption ${promptSaved ? "opacity-45" : "opacity-100"}`}>
+            {promptSaved ? "저장됨" : "저장 중…"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setPrompt(generated);
+              promptDirty.current = false;
+              savePrompt(generated);
+            }}
+            className="t-caption rounded-pill border border-hairline px-3 py-1.5 transition hover:border-ink"
+          >
+            설계서 기준으로 다시 생성
+          </button>
+          {outOfDate ? (
+            <span className="t-caption opacity-60">
+              설계서가 바뀌었습니다 — 필요하면 다시 생성하세요
+            </span>
+          ) : null}
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <CopyButton text={prompt} label="프롬프트 복사" />
           <a

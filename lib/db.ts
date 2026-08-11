@@ -105,6 +105,7 @@ export async function createSession(people: SeedInput[]): Promise<string> {
       selfReviewDesign: null,
       peerReviewDesign: null,
       canvaLink: "",
+      canvaPrompt: "",
       outputSummary: "",
       aiReviewOutput: null,
       selfReviewOutput: null,
