@@ -155,4 +155,19 @@ export function findSeed(id: string | null): DesignSeed | undefined {
   return DESIGN_SEEDS.find((s) => s.id === id);
 }
 
-export const SUBJECTS: Subject[] = ["물리", "화학", "생명", "지구"];
+/** 세션 생성 화면의 과목 드롭다운. 담당 과목을 모르면 "미정"으로 두면 된다. */
+export const SUBJECT_OPTIONS: Subject[] = ["미정", "물리", "화학", "생명", "지구"];
+
+/**
+ * 세션 생성 화면에 미리 채울 이름.
+ * 실명이 저장소에 남지 않도록 환경변수(NEXT_PUBLIC_DEFAULT_NAMES)로만 받는다.
+ * 값이 없으면 빈 칸으로 두고 강사가 직접 입력한다.
+ */
+export function defaultNames(): string[] {
+  const raw = process.env.NEXT_PUBLIC_DEFAULT_NAMES ?? "";
+  const names = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return Array.from({ length: 4 }, (_, i) => names[i] ?? "");
+}

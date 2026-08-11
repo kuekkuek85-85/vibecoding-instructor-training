@@ -1,4 +1,15 @@
-export type Subject = "물리" | "화학" | "생명" | "지구";
+/** 강사의 담당 과목. 모르면 "미정" — 화면 표시용 라벨일 뿐 기능에는 관여하지 않는다. */
+export type Subject = "미정" | "물리" | "화학" | "생명" | "지구";
+
+/** "미정"은 이름 옆에 굳이 보여 주지 않는다. */
+export function subjectLabel(s: Subject): string {
+  return s === "미정" ? "" : s;
+}
+
+/** "이름 (과목)" 형태 — 과목이 미정이면 이름만 */
+export function nameWithSubject(name: string, s: Subject): string {
+  return s === "미정" ? name : `${name} (${s})`;
+}
 
 export type Usage = "verification" | "explanation";
 

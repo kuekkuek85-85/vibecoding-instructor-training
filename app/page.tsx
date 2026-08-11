@@ -11,9 +11,11 @@ import { addPeerQuestion, patchParticipant } from "@/lib/db";
 import {
   designDocReady,
   findPartner,
+  nameWithSubject,
   PHASE_LABEL,
   phaseToStage,
   reviewerRoleFor,
+  subjectLabel,
   type DesignDoc,
   type Participant,
 } from "@/lib/types";
@@ -78,7 +80,7 @@ export default function StudentPage() {
               className="rounded-xl border border-line bg-surface p-6 text-left transition hover:border-accent hover:bg-surface-2"
             >
               <div className="text-2xl font-bold">{p.name}</div>
-              <div className="mt-1 text-sm text-muted">{p.subject}</div>
+              <div className="mt-1 text-sm text-muted">{subjectLabel(p.subject)}</div>
             </button>
           ))}
         </div>
@@ -97,7 +99,7 @@ export default function StudentPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold">{me.name}</span>
-            <Badge tone="accent">{me.subject}</Badge>
+            {me.subject !== "미정" ? <Badge tone="accent">{me.subject}</Badge> : null}
             {me.gateApproved ? <Badge tone="ok">설계 승인 완료</Badge> : null}
           </div>
           <button
@@ -295,7 +297,7 @@ function DesignReviewStage({
           <div className="space-y-4">
             <div className="rounded-lg border border-line bg-surface-2 p-4">
               <div className="mb-2 font-medium">
-                {partner.name} ({partner.subject})
+                {nameWithSubject(partner.name, partner.subject)}
               </div>
               <DesignDocView doc={partner.designDoc} />
             </div>
@@ -576,7 +578,7 @@ function PresentStage({
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <h2 className="text-lg font-bold">
-            발표자 · {presenter.name} ({presenter.subject})
+            발표자 · {nameWithSubject(presenter.name, presenter.subject)}
           </h2>
           {isPresenter ? <Badge tone="ok">발표 중</Badge> : null}
           {role ? <Badge tone="warn">내 역할: {role} 검토관</Badge> : null}

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { createSession, patchParticipant, patchSession } from "@/lib/db";
-import { SUBJECTS } from "@/lib/seed-data";
+import { defaultNames, SUBJECT_OPTIONS } from "@/lib/seed-data";
 import {
   designReviewComplete,
+  nameWithSubject,
   PHASE_LABEL,
   PHASES,
   phaseToStage,
@@ -69,7 +70,7 @@ export function AdminDashboard() {
             {participants.map((p) => (
               <li key={p.id} className="rounded-lg border border-line bg-surface-2 p-4">
                 <div className="mb-1 text-sm text-muted">
-                  {p.name} · {p.subject}
+                  {nameWithSubject(p.name, p.subject)}
                 </div>
                 <div className="text-lg">{p.takeaway || "—"}</div>
               </li>
@@ -101,12 +102,10 @@ function SeedPanel({
   onDone: () => void;
   onCancel?: () => void;
 }) {
-  const [people, setPeople] = useState<{ name: string; subject: Subject }[]>([
-    { name: "", subject: "물리" },
-    { name: "", subject: "물리" },
-    { name: "", subject: "화학" },
-    { name: "", subject: "화학" },
-  ]);
+  // 과목은 임의로 넣지 않고 "미정"에서 시작한다 — 강사가 알면 바꾸면 된다.
+  const [people, setPeople] = useState<{ name: string; subject: Subject }[]>(() =>
+    defaultNames().map((name) => ({ name, subject: "미정" as Subject }))
+  );
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -141,7 +140,7 @@ function SeedPanel({
                     setPeople(next);
                   }}
                 >
-                  {SUBJECTS.map((s) => (
+                  {SUBJECT_OPTIONS.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -240,7 +239,7 @@ function SessionBar({
             <option value="">— 지정 안 함 —</option>
             {participants.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} ({p.subject})
+                {nameWithSubject(p.name, p.subject)}
               </option>
             ))}
           </select>
@@ -333,7 +332,7 @@ function ParticipantCard({
     <Card className={isPresenter ? "border-ok" : ""}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-lg font-bold">{p.name}</span>
-        <Badge tone="accent">{p.subject}</Badge>
+        {p.subject !== "미정" ? <Badge tone="accent">{p.subject}</Badge> : null}
         <Badge>{p.stage}단계</Badge>
         {p.gateApproved ? <Badge tone="ok">승인됨</Badge> : <Badge tone="warn">🔒 미승인</Badge>}
         {isPresenter ? <Badge tone="ok">발표 중</Badge> : null}
