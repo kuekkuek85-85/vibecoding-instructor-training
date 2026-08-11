@@ -107,26 +107,46 @@ eq(
 // 5. 단계 번호는 1~7
 eq(PHASES.map(phaseToStage), [1, 2, 3, 4, 5, 6, 7], "phase → 단계 번호 1~7");
 
-// 6. 캔바 프롬프트: PRD 템플릿의 7줄이 모두 나오고 설계서 값이 들어가야 한다
+// 6. 캔바 프롬프트: 사용자·맥락 → 조건 → 성공 조건 → 제약 순서가 모두 들어가야 한다
 const seed = DESIGN_SEEDS.find((s) => s.id === "phy-pendulum")!;
-const prompt = buildCanvaPrompt(seed.doc);
+const withVerification = { ...seed.doc, verification: "길이 1 m에서 주기 2초인지 확인" };
+const prompt = buildCanvaPrompt(withVerification, "물리");
 for (const needle of [
-  "다음 과학 시뮬레이션 위젯을 만들어줘.",
+  "중학교 과학영재원",          // ① 사용자
+  "수업과 발표회",              // ① 맥락
+  "분야는 물리이고",            // ① 과목이 들어감
+  "진자 길이 – 주기",           // ① 주제 제목
+  "아래 조건에 딱 맞는",
   "- 목적:",
   "- 슬라이더:",
   "- 그래프: x축=",
   "- 화면에 고정값으로 명시:",
   "- 예상 패턴:",
-  "로그인/저장/장식 애니메이션 금지",
+  "- 화면에서 확인할 수 있어야 하는 것:", // ② 검증 기준이 실린다
+  "성공 조건:",                 // ③
+  "기능은 위 1개만",            // ④
+  "로그인·저장·장식 애니메이션은 넣지 마",
 ]) {
   eq(prompt.includes(needle), true, `캔바 프롬프트에 "${needle}" 포함`);
 }
 eq(prompt.includes(seed.doc.independentVar), true, "조작변인이 프롬프트에 들어감");
 eq(prompt.includes(seed.doc.dependentVar), true, "종속변인이 프롬프트에 들어감");
-eq(prompt.split("\n").length, 7, "검증용 프롬프트는 7줄");
+// 제약은 반드시 맨 끝 — 앞에 두면 조건 목록에 묻힌다
+eq(prompt.trimEnd().endsWith("한국어 UI로 만들어 줘."), true, "제약 문장이 맨 마지막");
+// 검증 기준이 비어 있으면 그 줄은 아예 넣지 않는다
+eq(
+  buildCanvaPrompt(seed.doc, "물리").includes("화면에서 확인할 수 있어야 하는 것"),
+  false,
+  "검증 기준이 비면 해당 줄 없음"
+);
+// 과목 미정이면 분야 문구를 넣지 않는다
+eq(buildCanvaPrompt(withVerification, "미정").includes("분야는"), false, "과목 미정이면 분야 문구 없음");
 
-// 설명용은 정확성 근거 줄이 추가된다
-const expl = buildCanvaPrompt({ ...seed.doc, usage: "explanation", concept: "진자 운동" });
+// 설명용은 정확성 근거 줄이 들어간다
+const expl = buildCanvaPrompt(
+  { ...seed.doc, usage: "explanation", concept: "진자 운동", accuracyBasis: "교과서 대조" },
+  "물리"
+);
 eq(expl.includes("과학적 정확성 근거"), true, "설명용 프롬프트에 정확성 근거 포함");
 eq(expl.includes("진자 운동"), true, "설명용 프롬프트가 concept 을 목적으로 씀");
 

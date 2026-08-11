@@ -449,7 +449,7 @@ function BuildStage({ sessionId, me }: { sessionId: string; me: Participant }) {
   const [saved, setSaved] = useState(false);
 
   // 설계서에서 즉석 생성한 기본 프롬프트. 손본 적이 없으면 이걸 그대로 쓴다.
-  const generated = buildCanvaPrompt(me.designDoc);
+  const generated = buildCanvaPrompt(me.designDoc, me.subject);
   const [prompt, setPrompt] = useState(me.canvaPrompt || generated);
   const [promptSaved, setPromptSaved] = useState(true);
   /** 저장 대기 중인 편집이 있으면 원격 스냅샷으로 덮지 않는다 */
