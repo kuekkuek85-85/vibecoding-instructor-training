@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 과학영재원 바이브코딩 강사 연수 플랫폼
 
-## Getting Started
+동부중등영재원 협력학교 과학 강사 대상 바이브코딩 기초 연수를 진행하는 웹 플랫폼입니다.
+수강생이 "학생 입장"으로 **설계 → 제작 → 검토 → 발표** 흐름을 직접 겪게 하고,
+강사는 한 화면에서 전원의 진행 상황을 보며 단계를 넘깁니다.
 
-First, run the development server:
+## 무엇을 하는 도구인가
+
+핵심은 **4중 검토**입니다. 연구설계서 하나가 AI → 자기 → 동료 → 강사의 검토를 차례로 거치고,
+강사 승인(게이트) 없이는 제작 단계가 열리지 않습니다. 같은 검토 구조를 설계 단계와 산출물
+단계에서 두 번 돌립니다.
+
+수강생이 직접 쓰는 칸은 연구설계서 7칸 중 **검증 기준** 하나뿐입니다. 나머지 6칸은 과목별
+예시로 미리 채워져 있어, 짧은 연수 시간 안에 "무엇을 어떻게 확인할 것인가"에만 집중하게 합니다.
+
+완성된 설계서는 캔바 코드용 프롬프트로 자동 조립되어, 복사 한 번으로 시뮬레이션 화면 제작으로
+넘어갑니다.
+
+## 진행 단계
+
+| # | 단계 | 내용 |
+|---|------|------|
+| 1 | 대기 | 슬라이드 동기화 화면 |
+| 2 | 설계 | 연구설계서 작성 (검증 기준 직접 작성) |
+| 3 | 설계 검토 | AI → 자기 → 동료 → **강사 승인 게이트** |
+| 4 | 제작 | 프롬프트 자동 생성 · 복사 → 결과물 링크 제출 |
+| 5 | 산출물 검토 | AI 검토(결과 vs 가설·문헌) → 한계 1줄 추가 |
+| 6 | 발표 | 발표자 지정, 검토관 질문(변인·검증·한계), 강사 코멘트 |
+| 7 | 정리 | "내 수업에 가져갈 것 하나" |
+
+## 실행
 
 ```bash
+cp .env.local.example .env.local   # 값을 채운 뒤
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 수강생: `http://localhost:3000/` — 로그인 없이 이름 카드 선택
+- 강사: `http://localhost:3000/admin?key=<ADMIN_KEY>`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Firestore 보안 규칙을 먼저 게시해야 합니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx firebase-tools deploy --only firestore:rules
+```
 
-## Learn More
+## 스크립트
 
-To learn more about Next.js, take a look at the following resources:
+| 명령 | 하는 일 |
+|---|---|
+| `npm run dev` | 개발 서버 |
+| `npm run build` | 프로덕션 빌드 + 타입 검사 |
+| `npm run check` | 짝 배정·검토관 역할·게이트 조건·프롬프트 템플릿 검증 |
+| `npm run lint` | ESLint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 기술 스택
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Next.js 16 (App Router) · Firebase Firestore · Tailwind CSS 4 · Gemini API · Vercel
 
-## Deploy on Vercel
+## 문서
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [docs/RUNBOOK.md](docs/RUNBOOK.md) — 연수 당일 진행 순서와 장애 대응
+- [docs/PRD.md](docs/PRD.md) — 원본 요구사항
+- [CLAUDE.md](CLAUDE.md) — 구조 설명과 개발 워크플로
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 보안에 대해
+
+오늘 1회 행사용으로 만들어져, Firestore 규칙이 `sessions/`와 `meta/active`에 대해 무인증
+읽기·쓰기를 허용합니다. 세션 id를 랜덤 문자열로 두어 경로 추측을 어렵게 하는 수준으로만
+보호합니다. 행사가 끝나면 [firestore.rules](firestore.rules) 하단의 "행사 후" 블록으로
+교체해 잠그세요. 재사용하거나 규모를 키운다면 익명 인증과 참가자 소유권 규칙이 필요합니다.
