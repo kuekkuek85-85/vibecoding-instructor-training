@@ -31,7 +31,11 @@ import {
   type Phase,
 } from "@/lib/types";
 import { useMyParticipantId, useSession } from "@/lib/useSession";
-import { WRAPUP_CAUTIONS, WRAPUP_INTENT } from "@/lib/wrapup-notes";
+import {
+  WRAPUP_INTENT,
+  WRAPUP_NOTES,
+  WRAPUP_NOTES_HEADER,
+} from "@/lib/wrapup-notes";
 
 const CANVA_CODE_URL = "https://www.canva.com/code/";
 
@@ -874,13 +878,13 @@ function WrapupStage({ sessionId, me }: { sessionId: string; me: Participant }) 
 
       <Card>
         <SectionTitle
-          eyebrow="Cautions"
-          hint="학생들과 산출물을 만들 때 이 다섯 가지만은 지켜 주세요."
+          eyebrow={WRAPUP_NOTES_HEADER.eyebrow}
+          hint={WRAPUP_NOTES_HEADER.hint}
         >
-          지도하실 때 주의할 점
+          {WRAPUP_NOTES_HEADER.title}
         </SectionTitle>
         <ol className="divide-y divide-hairline-soft">
-          {WRAPUP_CAUTIONS.map((c, i) => (
+          {WRAPUP_NOTES.map((c, i) => (
             <li key={i} className="flex gap-4 py-4">
               <span className="t-caption pt-1 opacity-40">
                 {String(i + 1).padStart(2, "0")}
