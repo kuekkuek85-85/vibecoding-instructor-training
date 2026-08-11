@@ -38,15 +38,16 @@ export default function StudentPage() {
     }
   }, [sessionId, me, session]);
 
-  if (loading || !ready) {
-    return <Shell>불러오는 중…</Shell>;
-  }
+  // 순서 중요: 에러와 "세션 없음"은 ready(=sessionId 존재) 가드보다 먼저 걸러야 한다.
   if (error) {
     return (
       <Shell>
         <Notice tone="danger">{error}</Notice>
       </Shell>
     );
+  }
+  if (loading) {
+    return <Shell>불러오는 중…</Shell>;
   }
   if (!sessionId || !session) {
     return (
@@ -57,6 +58,9 @@ export default function StudentPage() {
         </Notice>
       </Shell>
     );
+  }
+  if (!ready) {
+    return <Shell>불러오는 중…</Shell>;
   }
 
   if (!me) {
